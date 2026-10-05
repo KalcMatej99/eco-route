@@ -1,0 +1,789 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mdb:MD_Metadata xmlns:mdb="http://standards.iso.org/iso/19115/-3/mdb/2.0" xmlns:cat="http://standards.iso.org/iso/19115/-3/cat/1.0" xmlns:gfc="http://standards.iso.org/iso/19110/gfc/1.1" xmlns:cit="http://standards.iso.org/iso/19115/-3/cit/2.0" xmlns:gcx="http://standards.iso.org/iso/19115/-3/gcx/1.0" xmlns:gex="http://standards.iso.org/iso/19115/-3/gex/1.0" xmlns:lan="http://standards.iso.org/iso/19115/-3/lan/1.0" xmlns:srv="http://standards.iso.org/iso/19115/-3/srv/2.0" xmlns:mas="http://standards.iso.org/iso/19115/-3/mas/1.0" xmlns:mcc="http://standards.iso.org/iso/19115/-3/mcc/1.0" xmlns:mco="http://standards.iso.org/iso/19115/-3/mco/1.0" xmlns:mda="http://standards.iso.org/iso/19115/-3/mda/1.0" xmlns:mds="http://standards.iso.org/iso/19115/-3/mds/2.0" xmlns:mdt="http://standards.iso.org/iso/19115/-3/mdt/2.0" xmlns:mex="http://standards.iso.org/iso/19115/-3/mex/1.0" xmlns:mmi="http://standards.iso.org/iso/19115/-3/mmi/1.0" xmlns:mpc="http://standards.iso.org/iso/19115/-3/mpc/1.0" xmlns:mrc="http://standards.iso.org/iso/19115/-3/mrc/2.0" xmlns:mrd="http://standards.iso.org/iso/19115/-3/mrd/1.0" xmlns:mri="http://standards.iso.org/iso/19115/-3/mri/1.0" xmlns:mrl="http://standards.iso.org/iso/19115/-3/mrl/2.0" xmlns:mrs="http://standards.iso.org/iso/19115/-3/mrs/1.0" xmlns:msr="http://standards.iso.org/iso/19115/-3/msr/2.0" xmlns:mdq="http://standards.iso.org/iso/19157/-2/mdq/1.0" xmlns:dqm="http://standards.iso.org/iso/19157/-2/dqm/1.0" xmlns:mac="http://standards.iso.org/iso/19115/-3/mac/2.0" xmlns:gco="http://standards.iso.org/iso/19115/-3/gco/1.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.iso.org/iso/19115/-3/mdb/2.0 https://schemas.isotc211.org/19115/-3/mdb/2.0/mdb.xsd">
+  <mdb:metadataIdentifier>
+    <mcc:MD_Identifier>
+      <mcc:code>
+        <gco:CharacterString>5018ec17-2348-4c92-8761-6f2377bbd1c0</gco:CharacterString>
+      </mcc:code>
+    </mcc:MD_Identifier>
+  </mdb:metadataIdentifier>
+  <mdb:defaultLocale>
+    <lan:PT_Locale id="EN">
+      <lan:language>
+        <lan:LanguageCode codeList="http://www.loc.gov/standards/iso639-2/" codeListValue="eng" />
+      </lan:language>
+      <lan:characterEncoding>
+        <lan:MD_CharacterSetCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#MD_CharacterSetCode" codeListValue="utf8" />
+      </lan:characterEncoding>
+    </lan:PT_Locale>
+  </mdb:defaultLocale>
+  <mdb:metadataScope>
+    <mdb:MD_MetadataScope>
+      <mdb:resourceScope>
+        <mcc:MD_ScopeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#MD_ScopeCode" codeListValue="nonGeographicDataset" />
+      </mdb:resourceScope>
+      <mdb:name>
+        <gco:CharacterString>Tabular dataset</gco:CharacterString>
+      </mdb:name>
+    </mdb:MD_MetadataScope>
+  </mdb:metadataScope>
+  <mdb:contact>
+    <cit:CI_Responsibility>
+      <cit:role>
+        <cit:CI_RoleCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_RoleCode" codeListValue="pointOfContact" />
+      </cit:role>
+      <cit:party>
+        <cit:CI_Organisation>
+          <cit:name>
+            <gco:CharacterString>European Environment Agency</gco:CharacterString>
+          </cit:name>
+          <cit:contactInfo>
+            <cit:CI_Contact>
+              <cit:address>
+                <cit:CI_Address>
+                  <cit:deliveryPoint>
+                    <gco:CharacterString>Kongens Nytorv 6</gco:CharacterString>
+                  </cit:deliveryPoint>
+                  <cit:city>
+                    <gco:CharacterString>Copenhagen</gco:CharacterString>
+                  </cit:city>
+                  <cit:administrativeArea>
+                    <gco:CharacterString>K</gco:CharacterString>
+                  </cit:administrativeArea>
+                  <cit:postalCode>
+                    <gco:CharacterString>1050</gco:CharacterString>
+                  </cit:postalCode>
+                  <cit:country>
+                    <gco:CharacterString>Denmark</gco:CharacterString>
+                  </cit:country>
+                  <cit:electronicMailAddress>
+                    <gco:CharacterString>sdi@eea.europa.eu</gco:CharacterString>
+                  </cit:electronicMailAddress>
+                </cit:CI_Address>
+              </cit:address>
+            </cit:CI_Contact>
+          </cit:contactInfo>
+        </cit:CI_Organisation>
+      </cit:party>
+    </cit:CI_Responsibility>
+  </mdb:contact>
+  <mdb:dateInfo>
+    <cit:CI_Date>
+      <cit:date>
+        <gco:DateTime>2025-11-12T14:49:06.15097Z</gco:DateTime>
+      </cit:date>
+      <cit:dateType>
+        <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="creation" />
+      </cit:dateType>
+    </cit:CI_Date>
+  </mdb:dateInfo>
+  <mdb:dateInfo>
+    <cit:CI_Date>
+      <cit:date>
+        <gco:DateTime>2026-08-19T14:31:48.133604Z</gco:DateTime>
+      </cit:date>
+      <cit:dateType>
+        <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="revision" />
+      </cit:dateType>
+    </cit:CI_Date>
+  </mdb:dateInfo>
+  <mdb:metadataStandard>
+    <cit:CI_Citation>
+      <cit:title>
+        <gco:CharacterString>ISO 19115-3:2018</gco:CharacterString>
+      </cit:title>
+      <cit:edition>
+        <gco:CharacterString>1.0</gco:CharacterString>
+      </cit:edition>
+    </cit:CI_Citation>
+  </mdb:metadataStandard>
+  <mdb:metadataLinkage>
+    <cit:CI_OnlineResource>
+      <cit:linkage>
+        <gco:CharacterString>https://doi.org/10.2909/5018ec17-2348-4c92-8761-6f2377bbd1c0</gco:CharacterString>
+      </cit:linkage>
+      <cit:function>
+        <cit:CI_OnLineFunctionCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_OnLineFunctionCode" codeListValue="completeMetadata" />
+      </cit:function>
+    </cit:CI_OnlineResource>
+  </mdb:metadataLinkage>
+  <mdb:identificationInfo>
+    <mri:MD_DataIdentification>
+      <mri:citation>
+        <cit:CI_Citation>
+          <cit:title>
+            <gco:CharacterString>Monitoring of CO2 emissions from passenger cars, 2024 - Final</gco:CharacterString>
+          </cit:title>
+          <cit:date>
+            <cit:CI_Date>
+              <cit:date>
+                <gco:DateTime>2025-11-15T10:10:15+00:00</gco:DateTime>
+              </cit:date>
+              <cit:dateType>
+                <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="creation" />
+              </cit:dateType>
+            </cit:CI_Date>
+          </cit:date>
+          <cit:date>
+            <cit:CI_Date>
+              <cit:date>
+                <gco:DateTime>2026-07-30T10:10:15+00:00</gco:DateTime>
+              </cit:date>
+              <cit:dateType>
+                <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication" />
+              </cit:dateType>
+            </cit:CI_Date>
+          </cit:date>
+          <cit:edition>
+            <gco:CharacterString>01.00</gco:CharacterString>
+          </cit:edition>
+          <cit:identifier>
+            <mcc:MD_Identifier>
+              <mcc:code>
+                <gco:CharacterString>eea_t_co2-emissions-cars-final-2024_p_2024_v01_r00</gco:CharacterString>
+              </mcc:code>
+            </mcc:MD_Identifier>
+          </cit:identifier>
+          <cit:identifier>
+            <mcc:MD_Identifier>
+              <mcc:code>
+                <gco:CharacterString>co2-cars-emission-2022p</gco:CharacterString>
+              </mcc:code>
+            </mcc:MD_Identifier>
+          </cit:identifier>
+          <cit:identifier>
+            <mcc:MD_Identifier>
+              <mcc:code>
+                <gco:CharacterString>DAT-116-en</gco:CharacterString>
+              </mcc:code>
+            </mcc:MD_Identifier>
+          </cit:identifier>
+          <cit:identifier>
+            <mcc:MD_Identifier>
+              <mcc:code>
+                <gcx:Anchor xlink:href="https://doi.org/10.2909/5018ec17-2348-4c92-8761-6f2377bbd1c0">10.2909/5018ec17-2348-4c92-8761-6f2377bbd1c0</gcx:Anchor>
+              </mcc:code>
+              <mcc:codeSpace>
+                <gco:CharacterString>doi.org</gco:CharacterString>
+              </mcc:codeSpace>
+              <mcc:description>
+                <gco:CharacterString>Digital Object Identifier (DOI)</gco:CharacterString>
+              </mcc:description>
+            </mcc:MD_Identifier>
+          </cit:identifier>
+        </cit:CI_Citation>
+      </mri:citation>
+      <mri:abstract>
+        <gco:CharacterString>The Regulation (EU) No 2019/631 requires Countries to record information for each new passenger car registered in its territory. Every year, each Member State shall submit to the Commission all the information related to their new registrations. In particular, the following details are required for each new passenger car registered: manufacturer name, type approval number, type, variant, version, make and commercial name, specific emissions of CO2 (WLTP protocol), masses of the vehicle, wheel base, track width, engine capacity and power, fuel type and mode, eco-innovations and electricity consumption. Data for EU-27 are reported in the main database. Since 2018 Iceland is also included in the database. Since 2019 Norway is also included in the database.
+
+
+For downloading the data in the elastic data viewer please use Edge, Chrome, Firefox or Safari.</gco:CharacterString>
+      </mri:abstract>
+      <mri:purpose>
+        <gco:CharacterString>CO2 emissions in g/km </gco:CharacterString>
+      </mri:purpose>
+      <mri:pointOfContact>
+        <cit:CI_Responsibility>
+          <cit:role>
+            <cit:CI_RoleCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_RoleCode" codeListValue="pointOfContact" />
+          </cit:role>
+          <cit:party>
+            <cit:CI_Organisation>
+              <cit:name>
+                <gco:CharacterString>European Environment Agency</gco:CharacterString>
+              </cit:name>
+              <cit:contactInfo>
+                <cit:CI_Contact>
+                  <cit:address>
+                    <cit:CI_Address>
+                      <cit:deliveryPoint>
+                        <gco:CharacterString>Kongens Nytorv 6</gco:CharacterString>
+                      </cit:deliveryPoint>
+                      <cit:city>
+                        <gco:CharacterString>Copenhagen</gco:CharacterString>
+                      </cit:city>
+                      <cit:administrativeArea>
+                        <gco:CharacterString>K</gco:CharacterString>
+                      </cit:administrativeArea>
+                      <cit:postalCode>
+                        <gco:CharacterString>1050</gco:CharacterString>
+                      </cit:postalCode>
+                      <cit:country>
+                        <gco:CharacterString>Denmark</gco:CharacterString>
+                      </cit:country>
+                    </cit:CI_Address>
+                  </cit:address>
+                </cit:CI_Contact>
+              </cit:contactInfo>
+            </cit:CI_Organisation>
+          </cit:party>
+        </cit:CI_Responsibility>
+      </mri:pointOfContact>
+      <mri:pointOfContact>
+        <cit:CI_Responsibility>
+          <cit:role>
+            <cit:CI_RoleCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_RoleCode" codeListValue="custodian" />
+          </cit:role>
+          <cit:party>
+            <cit:CI_Organisation>
+              <cit:name>
+                <gco:CharacterString>European Environment Agency</gco:CharacterString>
+              </cit:name>
+              <cit:contactInfo>
+                <cit:CI_Contact>
+                  <cit:onlineResource>
+                    <cit:CI_OnlineResource>
+                      <cit:linkage>
+                        <gco:CharacterString>http://www.eea.europa.eu#organization</gco:CharacterString>
+                      </cit:linkage>
+                    </cit:CI_OnlineResource>
+                  </cit:onlineResource>
+                </cit:CI_Contact>
+              </cit:contactInfo>
+            </cit:CI_Organisation>
+          </cit:party>
+        </cit:CI_Responsibility>
+      </mri:pointOfContact>
+      <mri:pointOfContact gco:nilReason="withheld" />
+      <mri:spatialResolution>
+        <mri:MD_Resolution>
+          <mri:distance>
+            <gco:Distance uom="m" />
+          </mri:distance>
+        </mri:MD_Resolution>
+      </mri:spatialResolution>
+      <mri:topicCategory>
+        <mri:MD_TopicCategoryCode>environment</mri:MD_TopicCategoryCode>
+      </mri:topicCategory>
+      <mri:extent>
+        <gex:EX_Extent>
+          <gex:temporalElement>
+            <gex:EX_TemporalExtent>
+              <gex:extent>
+                <gml:TimePeriod gml:id="d132709e2007">
+                  <gml:beginPosition>2024-01-01</gml:beginPosition>
+                  <gml:endPosition>2024-12-31</gml:endPosition>
+                </gml:TimePeriod>
+              </gex:extent>
+            </gex:EX_TemporalExtent>
+          </gex:temporalElement>
+        </gex:EX_Extent>
+      </mri:extent>
+      <mri:resourceMaintenance>
+        <mmi:MD_MaintenanceInformation>
+          <mmi:maintenanceAndUpdateFrequency>
+            <mmi:MD_MaintenanceFrequencyCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#MD_MaintenanceFrequencyCode" codeListValue="annually" />
+          </mmi:maintenanceAndUpdateFrequency>
+        </mmi:MD_MaintenanceInformation>
+      </mri:resourceMaintenance>
+      <mri:graphicOverview>
+        <mcc:MD_BrowseGraphic>
+          <mcc:fileName>
+            <gco:CharacterString>https://sdi.eea.europa.eu/catalogue/api/records/5018ec17-2348-4c92-8761-6f2377bbd1c0/attachments/thumbnail.jpg</gco:CharacterString>
+          </mcc:fileName>
+        </mcc:MD_BrowseGraphic>
+      </mri:graphicOverview>
+      <mri:descriptiveKeywords>
+        <mri:MD_Keywords>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://rod.eionet.europa.eu/obligations/655">CO2 emissions from new passenger cars</gcx:Anchor>
+          </mri:keyword>
+          <mri:type>
+            <mri:MD_KeywordTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#MD_KeywordTypeCode" codeListValue="theme" />
+          </mri:type>
+          <mri:thesaurusName>
+            <cit:CI_Citation>
+              <cit:title>
+                <gcx:Anchor xlink:href="https://rod.eionet.europa.eu/obligations">Reporting obligations</gcx:Anchor>
+              </cit:title>
+              <cit:date>
+                <cit:CI_Date>
+                  <cit:date>
+                    <gco:Date>2023-02-06</gco:Date>
+                  </cit:date>
+                  <cit:dateType>
+                    <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication" />
+                  </cit:dateType>
+                </cit:CI_Date>
+              </cit:date>
+              <cit:identifier>
+                <mcc:MD_Identifier>
+                  <mcc:code>
+                    <gcx:Anchor xlink:href="https://sdi.eea.europa.eu/catalogue/srv/api/registries/vocabularies/external.theme.rod-eionet-europa-eu">geonetwork.thesaurus.external.theme.rod-eionet-europa-eu</gcx:Anchor>
+                  </mcc:code>
+                </mcc:MD_Identifier>
+              </cit:identifier>
+            </cit:CI_Citation>
+          </mri:thesaurusName>
+        </mri:MD_Keywords>
+      </mri:descriptiveKeywords>
+      <mri:descriptiveKeywords>
+        <mri:MD_Keywords>
+          <mri:keyword gco:nilReason="missing">
+            <gco:CharacterString />
+          </mri:keyword>
+          <mri:type>
+            <mri:MD_KeywordTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#MD_KeywordTypeCode" codeListValue="theme" />
+          </mri:type>
+          <mri:thesaurusName>
+            <cit:CI_Citation>
+              <cit:title>
+                <gcx:Anchor xlink:href="https://applications.eea.europa.eu/ManagementPlan/default.aspx#">EEA Management Plan</gcx:Anchor>
+              </cit:title>
+              <cit:date>
+                <cit:CI_Date>
+                  <cit:date>
+                    <gco:Date>2026-05-06</gco:Date>
+                  </cit:date>
+                  <cit:dateType>
+                    <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication" />
+                  </cit:dateType>
+                </cit:CI_Date>
+              </cit:date>
+              <cit:date>
+                <cit:CI_Date>
+                  <cit:date>
+                    <gco:Date>2021-08-25</gco:Date>
+                  </cit:date>
+                  <cit:dateType>
+                    <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication" />
+                  </cit:dateType>
+                </cit:CI_Date>
+              </cit:date>
+              <cit:identifier>
+                <mcc:MD_Identifier>
+                  <mcc:code>
+                    <gcx:Anchor xlink:href="https://sdi.eea.europa.eu/catalogue/srv/api/registries/vocabularies/local.theme.eea-mp">geonetwork.thesaurus.local.theme.eea-mp</gcx:Anchor>
+                  </mcc:code>
+                </mcc:MD_Identifier>
+              </cit:identifier>
+            </cit:CI_Citation>
+          </mri:thesaurusName>
+        </mri:MD_Keywords>
+      </mri:descriptiveKeywords>
+      <mri:descriptiveKeywords>
+        <mri:MD_Keywords>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="https://www.eea.europa.eu/en/topics/in-depth/climate-change-mitigation-reducing-emissions">Climate change mitigation: reducing emissions</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="https://www.eea.europa.eu/en/topics/in-depth/transport-and-mobility">Transport and mobility</gcx:Anchor>
+          </mri:keyword>
+          <mri:type>
+            <mri:MD_KeywordTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#MD_KeywordTypeCode" codeListValue="theme" />
+          </mri:type>
+          <mri:thesaurusName>
+            <cit:CI_Citation>
+              <cit:title>
+                <gcx:Anchor xlink:href="https://www.eea.europa.eu/themes">EEA topics</gcx:Anchor>
+              </cit:title>
+              <cit:date>
+                <cit:CI_Date>
+                  <cit:date>
+                    <gco:Date>2022-10-18</gco:Date>
+                  </cit:date>
+                  <cit:dateType>
+                    <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication" />
+                  </cit:dateType>
+                </cit:CI_Date>
+              </cit:date>
+              <cit:date>
+                <cit:CI_Date>
+                  <cit:date>
+                    <gco:Date>2020-09-24</gco:Date>
+                  </cit:date>
+                  <cit:dateType>
+                    <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication" />
+                  </cit:dateType>
+                </cit:CI_Date>
+              </cit:date>
+              <cit:identifier>
+                <mcc:MD_Identifier>
+                  <mcc:code>
+                    <gcx:Anchor xlink:href="https://sdi.eea.europa.eu/catalogue/srv/api/registries/vocabularies/external.theme.eea-topics">geonetwork.thesaurus.external.theme.eea-topics</gcx:Anchor>
+                  </mcc:code>
+                </mcc:MD_Identifier>
+              </cit:identifier>
+            </cit:CI_Citation>
+          </mri:thesaurusName>
+        </mri:MD_Keywords>
+      </mri:descriptiveKeywords>
+      <mri:descriptiveKeywords gco:nilReason="withheld" />
+      <mri:descriptiveKeywords gco:nilReason="withheld" />
+      <mri:descriptiveKeywords>
+        <mri:MD_Keywords>
+          <mri:keyword gco:nilReason="missing">
+            <gco:CharacterString />
+          </mri:keyword>
+          <mri:type>
+            <mri:MD_KeywordTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#MD_KeywordTypeCode" codeListValue="theme" />
+          </mri:type>
+          <mri:thesaurusName>
+            <cit:CI_Citation>
+              <cit:title>
+                <gcx:Anchor xlink:href="http://geonetwork-opensource.org/gemet">GEMET</gcx:Anchor>
+              </cit:title>
+              <cit:date>
+                <cit:CI_Date>
+                  <cit:date>
+                    <gco:Date>2021-11-30</gco:Date>
+                  </cit:date>
+                  <cit:dateType>
+                    <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication" />
+                  </cit:dateType>
+                </cit:CI_Date>
+              </cit:date>
+              <cit:identifier>
+                <mcc:MD_Identifier>
+                  <mcc:code>
+                    <gcx:Anchor xlink:href="https://sdi.eea.europa.eu/catalogue/srv/api/registries/vocabularies/external.theme.gemet">geonetwork.thesaurus.external.theme.gemet</gcx:Anchor>
+                  </mcc:code>
+                </mcc:MD_Identifier>
+              </cit:identifier>
+            </cit:CI_Citation>
+          </mri:thesaurusName>
+        </mri:MD_Keywords>
+      </mri:descriptiveKeywords>
+      <mri:descriptiveKeywords>
+        <mri:MD_Keywords>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/ESP">Spain</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/SVK">Slovakia</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/BEL">Belgium</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/POL">Poland</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/SWE">Sweden</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/FIN">Finland</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/GRC">Greece</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/ITA">Italy</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/NLD">Netherlands</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/CYP">Cyprus</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/LVA">Latvia</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/MLT">Malta</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/ROU">Romania</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/AUT">Austria</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/PRT">Portugal</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/ISL">Iceland</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/BGR">Bulgaria</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/CZE">Czechia</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/DEU">Germany</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/DNK">Denmark</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/NOR">Norway</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/HUN">Hungary</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/HRV">Croatia</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/EST">Estonia</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/LTU">Lithuania</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/IRL">Ireland</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/FRA">France</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/SVN">Slovenia</gcx:Anchor>
+          </mri:keyword>
+          <mri:keyword>
+            <gcx:Anchor xlink:href="http://www.naturalearthdata.com/ne_admin#Country/LUX">Luxembourg</gcx:Anchor>
+          </mri:keyword>
+          <mri:type>
+            <mri:MD_KeywordTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#MD_KeywordTypeCode" codeListValue="place" />
+          </mri:type>
+          <mri:thesaurusName>
+            <cit:CI_Citation>
+              <cit:title>
+                <gcx:Anchor xlink:href="http://geonetwork-opensource.org/thesaurus/naturalearth-and-seavox">Continents, countries, sea regions of the world.</gcx:Anchor>
+              </cit:title>
+              <cit:date>
+                <cit:CI_Date>
+                  <cit:date>
+                    <gco:DateTime>2015-07-17T12:00:00</gco:DateTime>
+                  </cit:date>
+                  <cit:dateType>
+                    <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication" />
+                  </cit:dateType>
+                </cit:CI_Date>
+              </cit:date>
+              <cit:date>
+                <cit:CI_Date>
+                  <cit:date>
+                    <gco:Date>2015-07-17</gco:Date>
+                  </cit:date>
+                  <cit:dateType>
+                    <cit:CI_DateTypeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication" />
+                  </cit:dateType>
+                </cit:CI_Date>
+              </cit:date>
+              <cit:identifier>
+                <mcc:MD_Identifier>
+                  <mcc:code>
+                    <gcx:Anchor xlink:href="https://sdi.eea.europa.eu/catalogue/srv/api/registries/vocabularies/external.place.regions">geonetwork.thesaurus.external.place.regions</gcx:Anchor>
+                  </mcc:code>
+                </mcc:MD_Identifier>
+              </cit:identifier>
+            </cit:CI_Citation>
+          </mri:thesaurusName>
+        </mri:MD_Keywords>
+      </mri:descriptiveKeywords>
+      <mri:resourceConstraints>
+        <mco:MD_Constraints>
+          <mco:useLimitation>
+            <gco:CharacterString>License CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Copyright holder: Directorate-General for Climate Action (DG-CLIMA).</gco:CharacterString>
+          </mco:useLimitation>
+        </mco:MD_Constraints>
+      </mri:resourceConstraints>
+      <mri:resourceConstraints>
+        <mco:MD_LegalConstraints>
+          <mco:accessConstraints>
+            <mco:MD_RestrictionCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#MD_RestrictionCode" codeListValue="otherRestrictions" />
+          </mco:accessConstraints>
+          <mco:otherConstraints>
+            <gcx:Anchor xlink:href="http://inspire.ec.europa.eu/metadata-codelist/LimitationsOnPublicAccess/noLimitations">No limitations to public access</gcx:Anchor>
+          </mco:otherConstraints>
+        </mco:MD_LegalConstraints>
+      </mri:resourceConstraints>
+      <mri:defaultLocale>
+        <lan:PT_Locale>
+          <lan:language>
+            <lan:LanguageCode codeList="http://www.loc.gov/standards/iso639-2/" codeListValue="eng" />
+          </lan:language>
+          <lan:characterEncoding gco:nilReason="unknown" />
+        </lan:PT_Locale>
+      </mri:defaultLocale>
+      <mri:supplementalInformation>
+        <gco:CharacterString>Data processing
+Since 2010 the EEA is collecting data from passenger cars registered in all EU Member States. The scheduling for the monitoring is the following:
+
+
+* Member States shall record information for each new passenger car and van registered in its territory and transmit this information to the Commission by 28 February of each year. Data are submitted to the Central Data Repository managed by the EEA (http://cdr.eionet.europa.eu/ (http://cdr.eionet.europa.eu/))
+
+* The EEA performs several quality checks in order to evaluate the accuracy and the quality of the dataset. On the basis of the checks and the feedbacks from Member States the EEA finalises and publishes the preliminary database. At the same time, notification letters are sent to manufacturers informing them of their provisional CO2 performances.
+
+* Manufacturers can, within three months of being notified of the provisional calculation, notify the Commission of any errors in the data.
+
+* The EEA and the European Commission assess the manufacturers’ corrections, and, where justified, take them into account for the calculation of the manufacturer final average CO2 emissions and specific emission targets The final data and targets are then published in the EEA website.
+
+The data are required for the calculation by the Commission of the average specific emissions of CO2 from new passenger cars and for setting the specific emissions targets that shall be met by car manufacturers. The database provides the detailed data without taking into account other factors required for the calculation of specific emissions targets (such as phase-in percentages, credits for low emitting vehicles and E85 fuelled vehicles, or eco-innovation credits) that vary over the years . In order to calculate the average specific emissions and specific emission targets the Commission considers only those vehicles for which emission and mass are available. 
+ 
+Data visualization 
+Discodata is an SQL Server Rest Endpoint provided by EEA allowing for access to various datasets including CO2 emission for cars. The dataset available contains all years of available data including both provisional final data. Please pay attention to both the year and the status field. The status field can have two values P=Provisional and F=Final. When extracting data, you should always select either Provisional or Final to avoid redundancy. To access the final 2024 data use this SQL expression (only first 1000 records): Select top 1000 * from [CO2Emission].[latest].[co2cars] where year = 2024 and status = 'F'
+
+
+For downloading the data in the elastic data viewer please use Edge, Chrome, Firefox or Safari.</gco:CharacterString>
+      </mri:supplementalInformation>
+    </mri:MD_DataIdentification>
+  </mdb:identificationInfo>
+  <mdb:contentInfo>
+    <mrc:MD_FeatureCatalogueDescription>
+      <mrc:includedWithDataset />
+    </mrc:MD_FeatureCatalogueDescription>
+  </mdb:contentInfo>
+  <mdb:contentInfo>
+    <mrc:MD_FeatureCatalogueDescription>
+      <mrc:includedWithDataset />
+    </mrc:MD_FeatureCatalogueDescription>
+  </mdb:contentInfo>
+  <mdb:contentInfo>
+    <mrc:MD_FeatureCatalogueDescription>
+      <mrc:includedWithDataset />
+    </mrc:MD_FeatureCatalogueDescription>
+  </mdb:contentInfo>
+  <mdb:contentInfo>
+    <mrc:MD_FeatureCatalogueDescription>
+      <mrc:includedWithDataset />
+    </mrc:MD_FeatureCatalogueDescription>
+  </mdb:contentInfo>
+  <mdb:contentInfo>
+    <mrc:MD_FeatureCatalogueDescription>
+      <mrc:includedWithDataset />
+    </mrc:MD_FeatureCatalogueDescription>
+  </mdb:contentInfo>
+  <mdb:contentInfo>
+    <mrc:MD_FeatureCatalogueDescription>
+      <mrc:includedWithDataset />
+    </mrc:MD_FeatureCatalogueDescription>
+  </mdb:contentInfo>
+  <mdb:contentInfo>
+    <mrc:MD_FeatureCatalogueDescription>
+      <mrc:includedWithDataset />
+    </mrc:MD_FeatureCatalogueDescription>
+  </mdb:contentInfo>
+  <mdb:distributionInfo>
+    <mrd:MD_Distribution>
+      <mrd:distributionFormat>
+        <mrd:MD_Format>
+          <mrd:formatSpecificationCitation>
+            <cit:CI_Citation>
+              <cit:title>
+                <gco:CharacterString>ascii (.csv, .txt, .sql)</gco:CharacterString>
+              </cit:title>
+              <cit:date gco:nilReason="unknown" />
+              <cit:edition gco:nilReason="unknown">
+                <gco:CharacterString />
+              </cit:edition>
+            </cit:CI_Citation>
+          </mrd:formatSpecificationCitation>
+        </mrd:MD_Format>
+      </mrd:distributionFormat>
+      <mrd:transferOptions>
+        <mrd:MD_DigitalTransferOptions>
+          <mrd:onLine>
+            <cit:CI_OnlineResource>
+              <cit:linkage>
+                <gco:CharacterString>http://co2cars.apps.eea.europa.eu/</gco:CharacterString>
+              </cit:linkage>
+              <cit:protocol>
+                <gco:CharacterString>WWW:LINK-1.0-http--link</gco:CharacterString>
+              </cit:protocol>
+              <cit:name>
+                <gco:CharacterString>CO2 passenger cars (elastic data viewer)</gco:CharacterString>
+              </cit:name>
+            </cit:CI_OnlineResource>
+          </mrd:onLine>
+          <mrd:onLine gco:nilReason="withheld" />
+          <mrd:onLine>
+            <cit:CI_OnlineResource>
+              <cit:linkage>
+                <gco:CharacterString>https://www.eea.europa.eu/en/analysis/indicators/co2-performance-of-new-passenger</gco:CharacterString>
+              </cit:linkage>
+              <cit:name>
+                <gco:CharacterString>CO2 emissions performance of new passenger cars in Europe</gco:CharacterString>
+              </cit:name>
+              <cit:description>
+                <gco:CharacterString>EEA Indicator</gco:CharacterString>
+              </cit:description>
+            </cit:CI_OnlineResource>
+          </mrd:onLine>
+          <mrd:onLine>
+            <cit:CI_OnlineResource>
+              <cit:linkage>
+                <gco:CharacterString>https://sdi.eea.europa.eu/catalogue/api/records/5018ec17-2348-4c92-8761-6f2377bbd1c0/attachments/CO2%20from%20cars%20and%20vans_Stastical%20metadata_2024.pdf</gco:CharacterString>
+              </cit:linkage>
+              <cit:protocol>
+                <gco:CharacterString>null</gco:CharacterString>
+              </cit:protocol>
+              <cit:name>
+                <gco:CharacterString>CO2 from cars and vans - statistical metadata (2024)</gco:CharacterString>
+              </cit:name>
+            </cit:CI_OnlineResource>
+          </mrd:onLine>
+          <mrd:onLine>
+            <cit:CI_OnlineResource>
+              <cit:linkage>
+                <gco:CharacterString>https://discodata.eea.europa.eu/</gco:CharacterString>
+              </cit:linkage>
+              <cit:protocol>
+                <gco:CharacterString>REST</gco:CharacterString>
+              </cit:protocol>
+              <cit:name>
+                <gco:CharacterString>SQL Rest Endpoint ([CO2Emission].[latest].[co2cars_2024Fv30])</gco:CharacterString>
+              </cit:name>
+              <cit:description>
+                <gco:CharacterString>SELECT TOP 100 * FROM [CO2Emission].[latest].[co2cars_2024Fv30]</gco:CharacterString>
+              </cit:description>
+              <cit:function>
+                <cit:CI_OnLineFunctionCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_OnLineFunctionCode" codeListValue="browsing" />
+              </cit:function>
+            </cit:CI_OnlineResource>
+          </mrd:onLine>
+          <mrd:onLine>
+            <cit:CI_OnlineResource>
+              <cit:linkage>
+                <gco:CharacterString>https://sdi.eea.europa.eu/catalogue/api/records/5018ec17-2348-4c92-8761-6f2377bbd1c0/attachments/Table-definition-cars-2024-Final.xlsx</gco:CharacterString>
+              </cit:linkage>
+              <cit:protocol>
+                <gco:CharacterString>WWW:LINK</gco:CharacterString>
+              </cit:protocol>
+              <cit:name>
+                <gco:CharacterString>Table definition</gco:CharacterString>
+              </cit:name>
+              <cit:function>
+                <cit:CI_OnLineFunctionCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#CI_OnLineFunctionCode" codeListValue="information" />
+              </cit:function>
+            </cit:CI_OnlineResource>
+          </mrd:onLine>
+        </mrd:MD_DigitalTransferOptions>
+      </mrd:transferOptions>
+      <mrd:transferOptions>
+        <mrd:MD_DigitalTransferOptions>
+          <mrd:onLine>
+            <cit:CI_OnlineResource>
+              <cit:linkage>
+                <gco:CharacterString>https://doi.org/10.2909/5018ec17-2348-4c92-8761-6f2377bbd1c0</gco:CharacterString>
+              </cit:linkage>
+              <cit:protocol>
+                <gco:CharacterString>DOI</gco:CharacterString>
+              </cit:protocol>
+              <cit:name>
+                <gco:CharacterString>Digital Object Identifier (DOI)</gco:CharacterString>
+              </cit:name>
+            </cit:CI_OnlineResource>
+          </mrd:onLine>
+        </mrd:MD_DigitalTransferOptions>
+      </mrd:transferOptions>
+    </mrd:MD_Distribution>
+  </mdb:distributionInfo>
+  <mdb:resourceLineage>
+    <mrl:LI_Lineage>
+      <mrl:statement>
+        <gco:CharacterString>Directorate-General for Climate Action.
+Data are submitted by Member States at: http://cdr.eionet.europa.eu/</gco:CharacterString>
+      </mrl:statement>
+      <mrl:scope>
+        <mcc:MD_Scope>
+          <mcc:level>
+            <mcc:MD_ScopeCode codeList="http://standards.iso.org/iso/19115/resources/Codelists/cat/codelists.xml#MD_ScopeCode" codeListValue="dataset" />
+          </mcc:level>
+        </mcc:MD_Scope>
+      </mrl:scope>
+    </mrl:LI_Lineage>
+  </mdb:resourceLineage>
+</mdb:MD_Metadata>
+

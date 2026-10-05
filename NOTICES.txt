@@ -1,0 +1,133 @@
+Eco Route third-party notices
+=============================
+
+Eco Route's original source is licensed under the MIT License in LICENSE.
+
+Runtime libraries
+-----------------
+
+The Android application uses AndroidX Core, Activity, Lifecycle, WebKit and
+Jetpack Compose libraries; Kotlin and kotlinx.coroutines; OkHttp; and Okio.
+These projects are distributed under the Apache License 2.0. A complete copy
+is included in THIRD_PARTY_LICENSES/Apache-2.0.txt:
+
+  https://www.apache.org/licenses/LICENSE-2.0
+
+Copyright notices and source are available from their respective projects:
+
+  https://source.android.com/
+  https://github.com/androidx/androidx
+  https://github.com/JetBrains/kotlin
+  https://github.com/Kotlin/kotlinx.coroutines
+  https://github.com/square/okhttp
+  https://github.com/square/okio
+
+OkHttp packages a compiled copy of the Public Suffix List. Its upstream notice
+is retained here:
+
+  Note that publicsuffixes.gz is compiled from The Public Suffix List:
+  https://publicsuffix.org/list/public_suffix_list.dat
+
+  It is subject to the terms of the Mozilla Public License, v. 2.0:
+  https://mozilla.org/MPL/2.0/
+
+A complete copy is included in THIRD_PARTY_LICENSES/MPL-2.0.txt.
+
+Leaflet 1.9.4
+-------------
+
+The application includes Leaflet 1.9.4 JavaScript and CSS under
+android/app/src/main/assets/vendor/. Leaflet is licensed under the BSD
+2-Clause License. The retained upstream license follows.
+
+Copyright (c) 2010-2023, Volodymyr Agafonkin
+Copyright (c) 2010-2011, CloudMade
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+OpenStreetMap data and tiles
+----------------------------
+
+Map data is © OpenStreetMap contributors and is available under the Open Data
+Commons Open Database License (ODbL) 1.0:
+
+  https://www.openstreetmap.org/copyright
+  https://opendatacommons.org/licenses/odbl/1-0/
+
+OpenStreetMap data and map tiles are network-provided content, not part of the
+Eco Route source license. The application preserves visible OpenStreetMap
+attribution on maps. Tile availability and use are governed separately by the
+OpenStreetMap Foundation tile usage policy:
+
+  https://operations.osmfoundation.org/policies/tiles/
+
+Build and test dependencies
+---------------------------
+
+The Gradle and Android build toolchain resolves additional transitive
+dependencies. The final release process must preserve the dependency graph and
+license inventory produced from the exact immutable release commit. Test-only
+libraries such as JUnit and org.json are not packaged in the release APK.
+
+EEA vehicle reference data
+--------------------------
+
+The car search uses an adapted snapshot of EEA's Monitoring of CO2 emissions
+from passenger cars, 2024 – Final. Copyright: Directorate-General for Climate
+Action (DG CLIMA), licensed CC BY 4.0. The full licence is retained in
+THIRD_PARTY_LICENSES/CC-BY-4.0.txt. The attributed derived reference catalogue is bundled in the Android
+app and is separate from its MIT source licence. No EEA or DG CLIMA endorsement
+is implied. Records are grouped by technical characteristics; reported fuel
+consumption ranges are retained, and missing or implausible fields remain
+unavailable. Further provenance and transformations: catalogue/README.md.
+
+https://www.eea.europa.eu/en/datahub/datahubitem-view/fa8b1229-3db6-495d-b18e-9c9b3267c02b
+https://sdi.eea.europa.eu/catalogue/srv/api/records/5018ec17-2348-4c92-8761-6f2377bbd1c0/formatters/xml
+https://creativecommons.org/licenses/by/4.0/
+
+EPA body-class reference
+-----------------------
+
+Vehicle body estimates use a reduced 2024 EPA/DOE FuelEconomy.gov size-class
+reference. EPA-produced data is in the US public domain under 17 USC 105;
+the EPA supplies no accuracy or utility warranty. No agency endorsement is
+implied. Only names, identifiers, year and size class are retained. Exact
+name matching and app-category mapping are adaptations, not verified European
+trim specifications. Fuel, mass and consumption continue to come from EEA.
+Renault's manufacturer description supplies the separate Clio V classification.
+
+https://www.fueleconomy.gov/feg/download.shtml
+https://edg.epa.gov/EPA_Data_License.html
+https://www.press.renault.co.uk/releases/2612
+
+Android 0.9.0 also includes jsoup 1.23.2 (MIT, Jonathan Hedley) to parse
+the current official GOV.SI fuel-price table, and Android desugar_jdk_libs_nio
+2.1.5 for Java library compatibility (OpenJDK GPLv2 with Classpath Exception
+and the accompanying additional licence/assembly information). Their notices
+are retained in THIRD_PARTY_LICENSES/.
+https://jsoup.org/
+https://github.com/google/desugar_jdk_libs
+
+The Android FTS4 catalogue is a derived form of the same attributed EEA/EPA
+inputs described above, carrying the same source and body-estimate provenance.

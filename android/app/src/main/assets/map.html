@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="vendor/leaflet.css">
+  <style>
+    :root{--safe-top:0px;--safe-right:0px;--safe-bottom:0px;--safe-left:0px;--panel-max-height:320px;--ink:#22243a;--muted:#666779;--surface:#fff;--primary:#5142d8}
+    *{box-sizing:border-box}html,body{position:fixed;inset:0;width:auto;height:auto;margin:0;overflow:hidden}body{background:#e9ede7;color:var(--ink);font:14px system-ui,sans-serif}#map{position:fixed;inset:0;width:auto;height:auto}
+    button{min-width:48px;min-height:48px;padding:9px 13px;border:1px solid #d9d6e8;border-radius:14px;background:var(--surface);color:var(--primary);font:600 13px system-ui,sans-serif;box-shadow:0 2px 10px #0002}
+    button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #887cf0;outline-offset:2px}
+    #fit{position:absolute;z-index:700;top:calc(var(--safe-top) + 12px);left:calc(var(--safe-left) + 12px);display:none}
+    .leaflet-top{top:var(--safe-top)}.leaflet-right{right:var(--safe-right)}.leaflet-left{left:var(--safe-left)}.leaflet-bottom{bottom:var(--safe-bottom)}
+    .leaflet-control-zoom a{width:48px!important;height:48px!important;line-height:48px!important}
+    #tile-status{position:absolute;z-index:710;top:calc(var(--safe-top) + 72px);left:calc(var(--safe-left) + 12px);max-width:min(270px,calc(100% - var(--safe-left) - var(--safe-right) - 24px));padding:9px 12px;border-radius:12px;background:#fffbef;color:#554b2e;box-shadow:0 2px 10px #0002;font-size:12px;display:none;align-items:center;gap:8px}
+    #tile-status.visible{display:flex}#tile-status[data-state="loading"] #retry-tiles{display:none}#retry-tiles{min-height:40px;min-width:auto;padding:6px 10px;box-shadow:none}
+    #osm-attribution{position:absolute;z-index:690;right:calc(var(--safe-right) + 4px);bottom:calc(var(--safe-bottom) + 4px);padding:3px 6px;border-radius:5px;background:#ffffffe8;color:#333;font-size:10px;text-decoration:none}
+    #map-tools{position:absolute;z-index:700;left:calc(var(--safe-left) + 12px);bottom:calc(var(--safe-bottom) + 28px);display:none;gap:8px}
+    #map-tools.visible{display:flex}.tool-panel{position:absolute;z-index:705;left:calc(var(--safe-left) + 12px);bottom:calc(var(--safe-bottom) + 86px);width:min(360px,calc(100% - var(--safe-left) - var(--safe-right) - 24px));max-height:var(--panel-max-height);overflow:auto;padding:14px;border:1px solid #dedbea;border-radius:18px;background:var(--surface);box-shadow:0 6px 24px #0003;display:none}.tool-panel.open{display:block}
+    .legend-title{font-weight:700}.legend-bands{display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:9px;font-size:11px}.legend-bands span{display:flex;align-items:center;gap:4px}.legend-bands i{display:inline-block;width:18px;height:5px;border-radius:4px}
+    .top{display:flex;justify-content:space-between;gap:12px;font-size:11px;color:var(--muted)}.readout{display:grid;grid-template-columns:75px minmax(0,1fr) 62px;gap:10px;align-items:center;margin:13px 0}#speed-value{font-size:28px;font-weight:750;letter-spacing:-1px}.unit{display:block;font-size:10px;color:var(--muted)}#speed-road{display:block;font-size:13px;overflow-wrap:anywhere}#speed-basis{display:block;font-size:11px;color:var(--muted);margin-top:4px}#speed-limit{display:block;font-size:13px}.limit{text-align:right}.limit small{display:block;font-size:9px;color:var(--muted)}#speed-explanation{font-size:12px;line-height:1.45;background:#f6f4ff;border-radius:11px;padding:10px}#speed-transition{font-size:11px;color:var(--muted)}.range-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;gap:8px}#locate-speed{min-height:44px;box-shadow:none}#route-position{width:100%;height:36px;accent-color:var(--primary)}.ends{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.speed-tip{display:grid;gap:4px}.speed-tip b{font-size:18px}
+    .place-pin{width:32px;height:32px;border:3px solid #fff;border-radius:50%;background:var(--primary);color:#fff;text-align:center;line-height:26px;font-weight:750;box-shadow:0 2px 7px #0005}.alternative-route{cursor:pointer}
+    @media(prefers-color-scheme:dark){:root{--ink:#eeedf7;--muted:#aaa9b8;--surface:#20202d;--primary:#c6baff}body{background:#171820}.tool-panel,button{border-color:#444354}#speed-explanation{background:#2c2840}#tile-status{background:#332f25;color:#f1e3b6}#osm-attribution{background:#20202dea;color:#ddd}}
+  </style>
+</head>
+<body>
+  <div id="map" aria-label="Journey planning map"></div>
+  <button id="fit" type="button" aria-label="Fit places or route on map">Show route</button>
+  <div id="tile-status" role="status" aria-live="polite" data-state="loading"><span id="tile-message">Loading map…</span><button id="retry-tiles" type="button">Retry</button></div>
+  <a id="osm-attribution" href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
+  <div id="map-tools">
+    <button id="toggle-legend" type="button" aria-expanded="false" aria-controls="legend-panel">Speed key</button>
+    <button id="toggle-inspector" type="button" aria-expanded="false" aria-controls="inspector-panel">Speed details</button>
+  </div>
+  <section id="legend-panel" class="tool-panel" aria-label="Route speed colors">
+    <div class="legend-title">Speed along your route · km/h</div><div id="speed-legend-bands" class="legend-bands"></div>
+  </section>
+  <section id="inspector-panel" class="tool-panel" aria-label="Route speed inspector">
+    <div class="top"><span id="speed-plan-kind"></span><span id="speed-position"></span></div>
+    <div class="readout"><div><output id="speed-value">—</output><span class="unit">km/h</span></div><div><strong id="speed-road"></strong><span id="speed-basis"></span></div><div class="limit"><strong id="speed-limit">—</strong><small>Mapped limit</small></div></div>
+    <p id="speed-explanation"></p><p id="speed-transition"></p>
+    <div class="range-head"><label for="route-position">Explore the route</label><button id="locate-speed" type="button">Zoom to point</button></div>
+    <input id="route-position" type="range" min="0" max="1" value="0" step="1"><div class="ends"><span>Start · 0 km</span><span id="route-position-end"></span></div><div id="speed-announcement" class="sr-only" aria-live="polite"></div>
+  </section>
+  <script src="vendor/leaflet.js"></script><script src="speed-map.js"></script><script src="map-inspector.js"></script><script src="map.js"></script>
+</body>
+</html>
