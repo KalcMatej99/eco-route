@@ -30,7 +30,7 @@
       this.projected=null;
       get('route-position').max=String(Math.ceil(this.shape.length));
       get('route-position-end').textContent=`${route.distance_km.toFixed(1)} km`;
-      get('speed-plan-kind').textContent=eligible?'Selected speed plan':'Normal model · outside time allowance';
+      get('speed-plan-kind').textContent=route.ignore_speed_limits?(eligible?'Theoretical speed plan · limits ignored':'Theoretical baseline · outside time allowance'):(eligible?'Selected speed plan':'Normal model · outside time allowance');
       if(this.map) {
         this.map.closePopup();
         if(this.tooltip) this.tooltip.remove();
@@ -72,7 +72,7 @@
       const point=S.inspect(this.route,this.plan,meters),segment=point.segment;
       this.position=point.meters;
       const latlng=S.pointAt(this.shape,point.meters),color=S.band(point.speed).color;
-      const limit=typeof segment.limit_kmh==='number'&&segment.limit_kmh>0?`${segment.limit_kmh} km/h`:'Unknown';
+      const limit=S.limitText(segment);
       const explanation=S.explainSpeed(this.route,this.plan,meters),basis=explanation.basis;
       get('route-position').value=String(point.meters);
       get('route-position').setAttribute('aria-valuetext',`${(point.meters/1000).toFixed(2)} km from start, modeled speed ${speedText(point.speed)}`);

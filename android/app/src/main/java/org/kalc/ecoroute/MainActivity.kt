@@ -62,7 +62,8 @@ private fun duration(minutes: Double): String { val rounded=minutes.roundToInt()
 @Composable
 fun EcoApp(vm: PlannerViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshFuelPrice() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refreshFuelPrice(); vm.setDrivingVisible(true) }
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { vm.setDrivingVisible(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { vm.cancelCurrentLocation() }
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var vehicleEditorOpen by rememberSaveable { mutableStateOf(false) }
@@ -291,7 +292,7 @@ private fun VehicleEditor(
         )
         Text(
             if(onboarding && state.vehicleSetupIsLegacyReview) "Review the vehicle carried over from your previous app version, then save to continue."
-            else if(onboarding) "Check this pilot preset and adjust the three details you know. You can refine the physical assumptions later."
+            else if(onboarding) "Check this example preset and adjust the three details you know. You can refine the physical assumptions later."
             else "Save the details for this car. Choose which saved car to use for each trip.",
             color=MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -340,7 +341,7 @@ private fun VehicleEditor(
             Text("Vehicle",style=MaterialTheme.typography.titleLarge)
             when {
                 state.vehicleDraftCatalogue != null -> CatalogueSelectionDetails(state.vehicleDraftCatalogue)
-                state.vehicleDraftAssumptionOrigin == VehicleAssumptionOrigin.PILOT_PRESET -> Text("Pilot preset: Volvo XC90 B5 AWD. Review these values for your car.",style=MaterialTheme.typography.bodySmall)
+                state.vehicleDraftAssumptionOrigin == VehicleAssumptionOrigin.PILOT_PRESET -> Text("Example preset: Volvo XC90 B5 AWD. Review these values for your car.",style=MaterialTheme.typography.bodySmall)
                 else -> Text("Manually entered vehicle details.",style=MaterialTheme.typography.bodySmall)
             }
             VehicleField("Vehicle name or model",state.vehicleDraft.name,{vm.editVehicleDraft(VehicleKeys.NAME,it)},numeric=false,tag="vehicle-name")
@@ -406,7 +407,7 @@ private fun VehicleEditor(
                 VehicleField("Rolling resistance coefficient",state.vehicleDraft.rollingResistance,{vm.editVehicleDraft(VehicleKeys.ROLLING_RESISTANCE,it)},tag="vehicle-rolling")
                 VehicleField("Auxiliary power (kW)",state.vehicleDraft.auxiliaryKw,{vm.editVehicleDraft(VehicleKeys.AUXILIARY_KW,it)},tag="vehicle-auxiliary")
                 VehicleField("Engine overhead (L/h)",state.vehicleDraft.engineOverheadLh,{vm.editVehicleDraft(VehicleKeys.ENGINE_OVERHEAD_L_H,it)},tag="vehicle-overhead")
-                TextButton(onClick={vm.resetVehicleDraft()},modifier=Modifier.testTag("vehicle-reset")) { Text("Use XC90 pilot preset") }
+                TextButton(onClick={vm.resetVehicleDraft()},modifier=Modifier.testTag("vehicle-reset")) { Text("Use XC90 example preset") }
             }
         }
         Text("Saved on this device. Fuel and speed calculations run on your phone; your vehicle details stay here. No account is required.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -467,44 +468,6 @@ internal fun TripLoad(state: UiState, vm: PlannerViewModel) {
     )
     state.tripLoadError?.let { Text(it,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall,modifier=Modifier.testTag("trip-load-error")) }
     if(state.tripLoadKg != "0") TextButton(onClick=vm::resetTripLoad,modifier=Modifier.testTag("trip-load-reset")) { Text("Reset to 0 kg") }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-internal fun Allowance(state:UiState,vm:PlannerViewModel) {
-    Text("Your time, your choice",style=MaterialTheme.typography.titleMedium)
-    Text("Choose a maximum time allowance for each section. More time can enable a lower-fuel plan, but does not guarantee a saving.",style=MaterialTheme.typography.bodySmall)
-    FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-        FilterChip(selected=state.allowanceMode==TimeAllowanceMode.PERCENT,onClick={vm.setAllowanceMode(TimeAllowanceMode.PERCENT)},label={Text("Percentage")},modifier=Modifier.testTag("allowance-mode-percent"))
-        FilterChip(selected=state.allowanceMode==TimeAllowanceMode.MINUTES,onClick={vm.setAllowanceMode(TimeAllowanceMode.MINUTES)},label={Text("Custom minutes · advanced")},modifier=Modifier.testTag("allowance-mode-minutes"))
-    }
-    if (state.allowanceMode == TimeAllowanceMode.PERCENT) {
-        FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-            state.percentAllowanceValues.forEach { percent ->
-                val extra = state.selectedLeg?.timeAllowance?.option(percent)?.extraMinutes
-                FilterChip(selected=state.allowanceValue==percent,onClick={vm.setPercentAllowance(percent)},modifier=Modifier.testTag("allowance-percent-$percent"),label={
-                    if(percent==0) Text("Fastest") else Column {
-                        Text("+$percent%")
-                        extra?.let { Text("up to ${it.f()} min",style=MaterialTheme.typography.labelSmall) }
-                    }
-                })
-            }
-        }
-        Text(if(state.selectedLeg!=null) "Minute equivalents use this section's fastest modeled time. Applying the same percentage per section gives the same percentage bound for the whole journey." else "The exact minute allowance is calculated separately for each section.",style=MaterialTheme.typography.labelSmall)
-    } else {
-        OutlinedTextField(
-            value=state.customMinutesText,
-            onValueChange=vm::editCustomMinutes,
-            label={Text("Extra minutes (1–120)")},
-            supportingText={Text("Added separately to every section. A custom value requires a new calculation.")},
-            isError=state.customMinutesText.toIntOrNull()?.let { it !in 1..120 } ?: true,
-            singleLine=true,
-            keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number),
-            modifier=Modifier.fillMaxWidth(),
-            shape=RoundedCornerShape(14.dp),
-        )
-        state.selectedAllowanceOption?.let { Text("Maximum modeled driving time for this section: ${it.maxMinutes.f()} min.",style=MaterialTheme.typography.labelSmall) }
-    }
 }
 
 @Composable

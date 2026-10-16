@@ -65,6 +65,7 @@
   L.control.zoom({position:'topright'}).addTo(map);
   const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
   const journeyContext=L.layerGroup().addTo(map), alternatives=L.layerGroup().addTo(map), markers=L.layerGroup().addTo(map), speedMap=new SpeedMap(map);
+  let driving={active:false}, drivingMarker=null, accuracyCircle=null;
   let currentPayload={mode:'idle'}, lastPayload='', lastFitKey='', lastRouteGeometryKey='', insets=api.safeInsets(), tileSuccess=0, tileErrors=0, tileTimer=null;
 
   function tileState(state,message) {
@@ -82,6 +83,7 @@
   get('retry-tiles').onclick=()=>{beginTiles();tiles.redraw();};
 
   function routeSelect(routeId) {
+    if(driving.active)return;
     if(root.ecoRouteSelection&&typeof root.ecoRouteSelection.postMessage==='function') root.ecoRouteSelection.postMessage(routeId);
   }
   function placeIcon(label,title) {
@@ -106,7 +108,7 @@
     const size=map.getSize();if(size.x<96||size.y<96)return;
     map.fitBounds(bounds,Object.assign({maxZoom:14},fitOptions(insets,24,size)));
   }
-  root.__fitActiveRoute=fitCurrent;
+  root.__fitActiveRoute=()=>{if(driving.active)followDriving();else fitCurrent();};
 
   function drawAlternatives(payload) {
     alternatives.clearLayers();
@@ -148,13 +150,38 @@
     }
     setTimeout(()=>map.invalidateSize({pan:false}),0);
   }
+  function followDriving() {
+    if(!driving.active||!driving.following||!placePoint(driving))return;
+    const point=L.latLng(driving.lat,driving.lon),zoom=16,size=map.getSize();
+    const projected=map.project(point,zoom),safe=fitOptions(insets,0,size);
+    const [left,top]=safe.paddingTopLeft,[right,bottom]=safe.paddingBottomRight;
+    map.setView(map.unproject(projected.subtract(L.point((left-right)/2,(top-bottom)/2)),zoom),zoom,{animate:false});
+  }
+  root.updateDriving=function(value) {
+    driving=value&&typeof value==='object'?value:{active:false};
+    document.body.classList.toggle('driving',!!driving.active);
+    if(driving.active&&speedMap.marker){speedMap.marker.remove();speedMap.marker=null;map.closePopup();}
+    if(driving.active&&speedMap.tooltip){speedMap.tooltip.remove();speedMap.tooltip=null;}
+    const point=placePoint(driving);
+    if(driving.active&&point) {
+      if(!drivingMarker)drivingMarker=L.circleMarker(point,{radius:9,color:'#fff',weight:3,fillColor:'#1769d2',fillOpacity:1,interactive:false}).addTo(map);
+      else drivingMarker.setLatLng(point);
+      const accuracy=finite(driving.accuracy)?Math.max(0,Math.min(500,driving.accuracy)):0;
+      if(!accuracyCircle)accuracyCircle=L.circle(point,{radius:accuracy,color:'#1769d2',weight:1,fillOpacity:.08,interactive:false}).addTo(map);
+      else accuracyCircle.setLatLng(point).setRadius(accuracy);
+      drivingMarker.bringToFront();followDriving();
+    } else {
+      if(drivingMarker){drivingMarker.remove();drivingMarker=null;}
+      if(accuracyCircle){accuracyCircle.remove();accuracyCircle=null;}
+    }
+  };
   root.renderRoute=render;
   root.setViewportInsets=function(value) {
     const next=safeInsets(value),changed=JSON.stringify(next)!==JSON.stringify(insets);insets=next;
     const style=document.documentElement.style;style.setProperty('--safe-top',`${next.top}px`);style.setProperty('--safe-right',`${next.right}px`);style.setProperty('--safe-bottom',`${next.bottom}px`);style.setProperty('--safe-left',`${next.left}px`);
-    if(changed){map.invalidateSize({pan:false});if(currentPayload.mode!=='idle')fitCurrent();}
+    if(changed){map.invalidateSize({pan:false});if(driving.active)followDriving();else if(currentPayload.mode!=='idle')fitCurrent();}
   };
-  get('fit').onclick=fitCurrent;
+  get('fit').onclick=()=>{if(driving.active)followDriving();else fitCurrent();};
   function togglePanel(name){const panel=get(`${name}-panel`),open=!panel.classList.contains('open');closePanels();if(open){panel.classList.add('open');get(`toggle-${name}`).setAttribute('aria-expanded','true');}}
   get('toggle-legend').onclick=()=>togglePanel('legend');get('toggle-inspector').onclick=()=>togglePanel('inspector');
   map.on('click',event=>{if(event.originalEvent&&event.originalEvent.target&&event.originalEvent.target.closest&&event.originalEvent.target.closest('.leaflet-interactive'))return;closePanels();});
@@ -164,7 +191,7 @@
       const rect=entries[0].contentRect,next=`${Math.round(rect.width)}x${Math.round(rect.height)}`;
       document.documentElement.style.setProperty('--panel-max-height',`${panelMaxHeight(rect.height)}px`);
       if(rect.width<1||rect.height<1||next===observedSize)return;observedSize=next;
-      requestAnimationFrame(()=>{map.invalidateSize({pan:false});if(currentPayload.mode!=='idle')fitCurrent();});
+      requestAnimationFrame(()=>{map.invalidateSize({pan:false});if(driving.active)followDriving();else if(currentPayload.mode!=='idle')fitCurrent();});
     }).observe(get('map'));
   }
   beginTiles();

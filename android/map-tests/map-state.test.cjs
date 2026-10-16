@@ -84,3 +84,22 @@ test('full-viewport map exposes compact controls, retry, and visible OSM attribu
   assert.doesNotMatch(html,/max-height:min\(52vh/);
   assert.match(html,/max-height:var\(--panel-max-height\)/);
 });
+
+const S=require('../app/src/main/assets/speed-map.js');
+test('posted, missing and explicitly unlimited map limits have distinct labels',()=>{
+  assert.equal(S.limitText({limit_kmh:90}),'90 km/h');
+  for(const limit of [null,undefined,0,-1,Infinity,NaN]) assert.equal(S.limitText({limit_kmh:limit}),'Unknown');
+  assert.equal(S.limitText({limit_kmh:null,limit_unlimited:true}),'Unlimited');
+  assert.equal(S.limitText({limit_kmh:50,limit_unlimited:true}),'50 km/h');
+});
+
+
+test('theoretical map inspection shows the computed speed and labels ignored limits',()=>{
+  const route={ignore_speed_limits:true,distance_km:2,segments:[{start_m:0,end_m:2000,distance_m:2000,limit_kmh:30,provider_speed_kmh:20,speed_basis:'theoretical'}],baseline:{speed_kmh:[100,100]}};
+  const plan={speed_kmh:[100,100]};
+  assert.equal(S.inspect(route,plan,1000).speed,100);
+  const explanation=S.explainSpeed(route,plan,1000);
+  assert.equal(explanation.basis,'Theoretical speed');
+  assert.match(explanation.reason,/limits and provider speeds are ignored/);
+  assert.equal(S.limitText(route.segments[0]),'30 km/h');
+});

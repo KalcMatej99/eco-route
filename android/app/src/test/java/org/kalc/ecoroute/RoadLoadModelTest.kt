@@ -43,6 +43,70 @@ class RoadLoadModelTest {
         val path = System.getenv("ECO_PRIVATE_MODEL_FIXTURE") ?: return
         checkVectors(JSONArray(File(path).readText()))
     }
+    private fun parsedRoute(r: RoadLoadModel.Route): RouteReport {
+        val vehicle = RoadLoadModel.Vehicle.fromJson(vectors().getJSONObject(0).getJSONObject("vehicle"))
+        val baseline = RoadLoadModel.evaluate(r,r.caps,vehicle)
+        val report = JSONObject(r.metadata.toString())
+            .put("coordinates",JSONArray(r.coordinates.map { JSONArray(listOf(it.lat,it.lon)) }))
+            .put("baseline",RoadLoadModel.pack(r,baseline,vehicle)).put("plans",JSONObject())
+            .put("segments",JSONArray(r.segments.map { it.json }))
+        return EcoJson.parseJourney(JSONObject().put("routes",JSONArray().put(report)).put("recommendations",JSONObject().put("0",r.id)).put("fastest_minutes",baseline.seconds / 60).toString()).legs.single().routes.single()
+    }
+    @Test fun postedMissingAndUnlimitedLimitsSurviveTheFullDataPath() {
+        for (limit in listOf(70, 200, null, 0, "unlimited")) {
+            val candidate = vectors().getJSONObject(0).getJSONObject("candidate")
+            val trace = candidate.getJSONObject("trace")
+            val edges = trace.getJSONArray("edges")
+            for (i in 0 until edges.length()) {
+                val edge = edges.getJSONObject(i)
+                if (limit == null) edge.remove("speed_limit") else edge.put("speed_limit",limit)
+            }
+            val prepared = RoadLoadModel.prepare("limits","Limits",candidate.getJSONObject("trip"),trace)
+            val parsed = parsedRoute(prepared)
+            parsed.segments.forEach { segment ->
+                assertEquals(if (limit is Int && limit > 0) limit.toDouble() else null,segment.limitKmh)
+                assertEquals(limit == "unlimited",segment.limitUnlimited)
+            }
+            assertTrue(prepared.caps.all { it.isFinite() && it <= 130.0 / 3.6 })
+        }
+    }
+    @Test fun currentPrivateRouteHasAdviceForEveryMissingLimitSectionWhenSupplied() {
+        val path = System.getenv("ECO_SPEED_LIMIT_FIXTURE") ?: return
+        val candidates = JSONArray(File(path).readText())
+        var missing = 0; var known = 0
+        for (i in 0 until candidates.length()) {
+            val candidate = candidates.getJSONObject(i)
+            val prepared = RoadLoadModel.prepare("live-$i","Private route",candidate.getJSONObject("trip"),candidate.getJSONObject("trace"))
+            val route = parsedRoute(prepared)
+            val edgeLimits = candidate.getJSONObject("trace").getJSONArray("edges")
+            // Every source limit remains on all subdivided sections of that edge.
+            val coords = route.coordinates
+            val distances = mutableListOf(0.0)
+            coords.zipWithNext().forEach { (a,b) -> distances.add(distances.last() + RoadLoadModel.distance(a,b)) }
+            for (e in 0 until edgeLimits.length()) {
+                val edge = edgeLimits.getJSONObject(e)
+                val start = distances[edge.getInt("begin_shape_index")]; val end = distances[edge.getInt("end_shape_index")]
+                route.segments.filter { (it.startM + it.endM) / 2 in start..end }.forEach { section ->
+                    val expected = edge.optDouble("speed_limit",Double.NaN).takeIf { it.isFinite() && it > 0 }
+                    assertEquals(expected,section.limitKmh)
+                    if (expected == null) missing++ else known++
+                }
+            }
+            // Fresh route-aligned fixes at each section midpoint exercise the driving matcher.
+            for (section in route.segments) {
+                val meters = (section.startM + section.endM) / 2
+                val shapeIndex = distances.indexOfLast { it <= meters }.coerceAtMost(coords.lastIndex - 1)
+                val fraction = (meters - distances[shapeIndex]) / (distances[shapeIndex+1] - distances[shapeIndex])
+                val a = coords[shapeIndex]; val b = coords[shapeIndex+1]
+                val state = DrivingGuide(route,route.baseline).update(DrivingFix(
+                    a.lat + (b.lat-a.lat)*fraction,a.lon + (b.lon-a.lon)*fraction,1f,1000,0.0),1000)
+                assertNotNull("route $i at $meters: ${state.message}",state.advisoryKmh)
+                section.limitKmh?.let { assertTrue(state.advisoryKmh!! <= it) }
+            }
+        }
+        assertTrue(missing > 0); assertTrue(known > 0)
+        println("Private source and guidance verified: $known mapped sections and $missing missing-limit sections")
+    }
     @Test fun forceSignCrossingIsSubdivisionInvariant() {
         val v = RoadLoadModel.Vehicle(1800.0, .8, .011, .34, .8, .45, 35.8)
         val s = RoadLoadModel.Segment(250.0, 100.0, 70.0, 40.0, true, JSONObject())

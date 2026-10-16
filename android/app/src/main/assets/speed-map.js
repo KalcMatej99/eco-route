@@ -58,12 +58,13 @@
   }
   function explainSpeed(route,plan,meters) {
     const point=inspect(route,plan,meters),s=point.segment;
+    if(route.ignore_speed_limits || s.ignore_speed_limits)return {basis:'Theoretical speed',reason:'Speed limits and provider speeds are ignored as calculation ceilings. Speeds are bounded by the 130 km/h model maximum and acceleration/braking assumptions.',fastest:route.baseline?inspect(route,route.baseline,meters).speed:null};
     if(!route.baseline||!s.speed_basis)return {basis:s.optimize?'Optimized motorway section':'Static road estimate',reason:'Modeled speed includes transitions between road sections.'};
     const fastest=inspect(route,route.baseline,meters).speed,cap=s.cruise_cap_kmh;
-    if(point.speed<fastest-.5)return {basis:'Fuel-saving speed',reason:`Slower to save fuel within your time allowance. The fastest model at this point is ${fastest.toFixed(1)} km/h.`,fastest};
+    if(point.speed<fastest-.5)return {basis:'Fuel-saving speed',reason:`Slower to save fuel for your selected arrival time. The fastest model at this point is ${fastest.toFixed(1)} km/h.`,fastest};
     if(fastest<cap-.5)return {basis:'Acceleration or braking',reason:`The speed changes around the start, finish or a slower road section. This section’s cruise ceiling is ${cap.toFixed(0)} km/h; the fastest model here is ${fastest.toFixed(1)} km/h.`,fastest};
-    if(s.speed_basis==='mapped_motorway_limit')return {basis:cap<s.limit_kmh?'Pilot speed ceiling':'Mapped motorway limit',reason:cap<s.limit_kmh?`The pilot caps modeled speeds at ${cap.toFixed(0)} km/h, below this section’s mapped limit.`:`The fastest model reaches the mapped ${s.limit_kmh} km/h limit here. The provider’s ${s.provider_speed_kmh} km/h travel estimate is not treated as the limit.`,fastest};
-    return {basis:'Road-speed estimate',reason:`This road uses the provider’s ${s.provider_speed_kmh} km/h travel estimate, capped by known limits and the pilot maximum. ${s.limit_kmh?'A mapped limit is a ceiling, not an assumed driving speed on ramps and local roads.':'The mapped speed limit is unknown.'}`,fastest};
+    if(s.speed_basis==='mapped_motorway_limit')return {basis:cap<s.limit_kmh?'Model speed ceiling':'Mapped motorway limit',reason:cap<s.limit_kmh?`The model caps speeds at ${cap.toFixed(0)} km/h, below this section’s mapped limit.`:`The fastest model reaches the mapped ${s.limit_kmh} km/h limit here. The provider’s ${s.provider_speed_kmh} km/h travel estimate is not treated as the limit.`,fastest};
+    return {basis:'Road-speed estimate',reason:`This road uses the provider’s ${s.provider_speed_kmh} km/h travel estimate, capped by known limits and the model maximum. ${s.limit_kmh?'A mapped limit is a ceiling, not an assumed driving speed on ramps and local roads.':s.limit_unlimited?'The provider explicitly marks the mapped limit as unlimited.':'The mapped speed limit is unknown.'}`,fastest};
   }
   function pieces(segment,v0,v1) {
     const cuts=[0,1];
@@ -92,7 +93,10 @@
     }
     return best;
   }
-  const api={bands,unknown,band,geometry,pointAt,slice,speedAt,inspect,explainSpeed,pieces,nearest};
+  function limitText(segment) {
+    return typeof segment.limit_kmh==='number'&&Number.isFinite(segment.limit_kmh)&&segment.limit_kmh>0?`${segment.limit_kmh} km/h`:segment.limit_unlimited?'Unlimited':'Unknown';
+  }
+  const api={limitText,bands,unknown,band,geometry,pointAt,slice,speedAt,inspect,explainSpeed,pieces,nearest};
   if(typeof module!=='undefined'&&module.exports) module.exports=api;
   else root.RouteSpeed=api;
 })(globalThis);

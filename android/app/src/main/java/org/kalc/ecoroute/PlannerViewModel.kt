@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
@@ -49,6 +52,8 @@ class PlannerViewModel private constructor(
     private val initialTripLoad = preferences.getString(TRIP_LOAD_KG, "0") ?: "0"
     private val initialTripLoadError = tripLoadError(initialTripLoad, initialActiveProfile.vehicle.massKg)
     private val _state = MutableStateFlow(UiState(
+        recentPlaces = RecentPlaces.read(preferences.getString(RecentPlaces.KEY, null)),
+        ignoreSpeedLimits = preferences.getBoolean(IGNORE_SPEED_LIMITS, false),
         vehicle = initialActiveProfile.vehicle,
         vehicleDraft = initialActiveProfile.vehicle,
         vehicleCatalogue = initialActiveProfile.catalogue,
@@ -77,6 +82,92 @@ class PlannerViewModel private constructor(
     private var calculationGeneration = 0L
     private var locationJob: Job? = null
     private var locationGeneration = 0L
+
+    private var drivingJob: Job? = null
+    private var drivingGuide: DrivingGuide? = null
+    private var drivingSource: DrivingLocationSource = AndroidDrivingLocationSource(application)
+    private var drivingVisible = false
+
+    internal fun setDrivingLocationSource(source: DrivingLocationSource) {
+        check(!_state.value.driving.active)
+        drivingSource = source
+    }
+
+    fun startDriving() {
+        val current = _state.value
+        val route = current.selectedRoute ?: return
+        if (current.ignoreSpeedLimits || current.journey?.ignoresSpeedLimits == true || route.ignoreSpeedLimits) return
+        val plan = current.selectedPlan ?: return
+        cancelCurrentLocation()
+        drivingGuide = runCatching { DrivingGuide(route, plan) }.getOrNull()
+        _state.update { it.copy(driving = DrivingState(active = true,
+            message = if (drivingGuide == null) "Speed plan unavailable · stop and calculate again" else "Waiting for GPS…")) }
+        if (drivingVisible && drivingGuide != null) subscribeDriving()
+    }
+
+    fun stopDriving() {
+        drivingJob?.cancel()
+        drivingJob = null
+        drivingGuide = null
+        _state.update { it.copy(driving = DrivingState()) }
+    }
+
+    fun setDrivingVisible(visible: Boolean) {
+        drivingVisible = visible
+        if (!visible) {
+            drivingJob?.cancel()
+            drivingJob = null
+            if (_state.value.driving.active) _state.update { it.copy(driving = DrivingState(active = true,
+                message = "Driving paused · return to the app to resume")) }
+        } else if (_state.value.driving.active && drivingJob == null && drivingGuide != null) subscribeDriving()
+    }
+
+    fun continueDriving() {
+        val current = _state.value
+        if (!current.driving.arrived || current.activeLegIndex >= (current.journey?.legs?.lastIndex ?: 0)) return
+        drivingJob?.cancel()
+        drivingJob = null
+        _state.update { derive(it.copy(activeLegIndex = it.activeLegIndex + 1, driving = DrivingState())) }
+        startDriving()
+    }
+
+    private fun subscribeDriving() {
+        drivingJob?.cancel()
+        val current = _state.value
+        drivingGuide = current.selectedRoute?.let { route -> current.selectedPlan?.let { plan -> DrivingGuide(route, plan) } }
+        _state.update { it.copy(driving = DrivingState(active = true)) }
+        drivingJob = viewModelScope.launch {
+            try {
+                coroutineScope {
+                    launch {
+                        while (true) {
+                            delay(1_000L)
+                            _state.update { current ->
+                                val fix = current.driving.fix
+                                if (fix != null && drivingSource.nowMillis() - fix.elapsedMillis > DrivingGuide.MAX_AGE_MS) {
+                                    current.copy(driving = if (current.driving.arrived) current.driving.copy(fix = null)
+                                        else DrivingState(active = true, message = "GPS signal lost · waiting for a fresh position"))
+                                } else current
+                            }
+                        }
+                    }
+                    drivingSource.fixes().collect { fix ->
+                        if (_state.value.driving.arrived) {
+                            _state.update { it.copy(driving = it.driving.copy(fix = fix.takeIf { usableDrivingFix(it, drivingSource.nowMillis()) })) }
+                        } else {
+                            drivingGuide?.update(fix, drivingSource.nowMillis())?.let { driving ->
+                                _state.update { it.copy(driving = driving) }
+                            }
+                        }
+                    }
+                }
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                _state.update { it.copy(driving = DrivingState(active = true,
+                    message = error.message ?: "GPS unavailable · stop driving mode and retry")) }
+            }
+        }
+    }
 
     fun consumeCurrentLocationSelection() {
         _state.update { it.copy(locationSelectionPending = false) }
@@ -153,6 +244,7 @@ class PlannerViewModel private constructor(
 
     fun selectPlace(index: Int, place: Place) {
         if (index !in 0..1) return
+        rememberSelectedPlace(place)
         if (index == 0) { cancelCurrentLocation(); _state.update { it.copy(locationError = null, locationNotice = null) } }
         invalidateCalculation()
         addressJobs[index]?.cancel()
@@ -236,12 +328,28 @@ class PlannerViewModel private constructor(
 
     fun selectStopPlace(id: Long, place: Place) {
         if (_state.value.stops.none { it.id == id }) return
+        rememberSelectedPlace(place)
         invalidateCalculation()
         stopAddressJobs.remove(id)?.cancel()
         stopSearchGeneration[id] = (stopSearchGeneration[id] ?: 0L) + 1
         updateStop(id) { it.copy(text = place.label, selected = place, suggestions = emptyList(), isSearching = false, error = null) }
         clearJourney()
     }
+
+    private fun rememberSelectedPlace(place: Place) {
+        if (!RecentPlaces.usable(place)) return
+        api.registerSelectedPlace(place)
+        saveRecentPlaces(RecentPlaces.remember(_state.value.recentPlaces, place))
+    }
+
+    private fun saveRecentPlaces(places: List<Place>) {
+        preferences.edit().putString(RecentPlaces.KEY, RecentPlaces.encode(places)).apply()
+        _state.update { it.copy(recentPlaces = places) }
+    }
+
+    fun removeRecentPlace(place: Place) = saveRecentPlaces(_state.value.recentPlaces.filterNot { RecentPlaces.same(it,place) })
+
+    fun clearRecentPlaces() = saveRecentPlaces(emptyList())
 
     fun retryStop(id: Long) {
         val query = _state.value.stops.find { it.id == id }?.address?.text?.trim() ?: return
@@ -611,6 +719,14 @@ class PlannerViewModel private constructor(
         return true
     }
 
+    fun setIgnoreSpeedLimits(value: Boolean) {
+        if (value == _state.value.ignoreSpeedLimits) return
+        invalidateCalculation()
+        preferences.edit().putBoolean(IGNORE_SPEED_LIMITS, value).apply()
+        _state.update { derive(it.copy(ignoreSpeedLimits = value, journey = null,
+            selectedRouteIds = emptyList(), activeLegIndex = 0, error = null)) }
+    }
+
     fun setRoundTrip(value: Boolean) {
         invalidateCalculation()
         _state.update { derive(it.copy(
@@ -707,7 +823,7 @@ class PlannerViewModel private constructor(
                 val resultJson = withTimeout(ONE_WAY_TIMEOUT_MS * expectedLegs.coerceIn(1, 10)) {
                     withContext(ioDispatcher) {
                         api.calculateJourney(origin.id, destination.id, requestVehicle, current.roundTrip, timeAllowance,
-                            current.stops.map { requireNotNull(it.address.selected).id }) { message ->
+                            current.stops.map { requireNotNull(it.address.selected).id }, current.ignoreSpeedLimits) { message ->
                             if (generation == calculationGeneration) _state.update { it.copy(progressMessage = message) }
                         }
                     }
@@ -715,6 +831,10 @@ class PlannerViewModel private constructor(
                 val journey = withContext(ioDispatcher) { EcoJson.parseJourney(resultJson) }
                 validateItinerary(journey, origin, current.stops.map { requireNotNull(it.address.selected) }, destination, current.roundTrip)
                 validateTimeAllowance(journey, timeAllowance)
+                if (journey.legs.any { leg -> leg.routes.any { it.ignoreSpeedLimits != current.ignoreSpeedLimits } }) {
+                    throw EcoApiException("The calculation did not match this speed-limit setting. Please calculate again.")
+                }
+                val tradeoffs = withContext(Dispatchers.Default) { JourneyTradeoffs.build(journey) { ensureActive() } }
                 if (generation != calculationGeneration) return@launch
                 val selected = journey.legs.map { leg ->
                     leg.recommendations[_state.value.allowanceValue]
@@ -723,11 +843,13 @@ class PlannerViewModel private constructor(
                 _state.update {
                     derive(it.copy(
                         journey = journey, activeLegIndex = 0, selectedRouteIds = selected,
+                        tradeoffs = tradeoffs, selectedChoiceId = tradeoffs.initialChoice.id,
                         isCalculating = false, progressMessage = null, error = null,
                     ))
                 }
             } catch (error: Exception) {
                 if (error is kotlinx.coroutines.CancellationException && error !is kotlinx.coroutines.TimeoutCancellationException) throw error
+                if (generation != calculationGeneration) return@launch
                 _state.update {
                     derive(it.copy(
                         isCalculating = false, progressMessage = null,
@@ -746,12 +868,24 @@ class PlannerViewModel private constructor(
 
     fun selectRoute(id: String) {
         val current = _state.value
+        current.tradeoffs?.let { tradeoffs ->
+            val choice = tradeoffs.choices.filter { it.legs.getOrNull(current.activeLegIndex)?.route?.id == id }
+                .minByOrNull { kotlin.math.abs(it.minutes - (current.selectedChoice?.minutes ?: 0.0)) }
+            choice?.let { selectChoice(it.id) }
+            return
+        }
         val leg = current.journey?.legs?.getOrNull(current.activeLegIndex) ?: return
         if (leg.routes.none { it.id == id }) return
         val selections = current.selectedRouteIds.toMutableList()
         while (selections.size < legCount(current)) selections += ""
         selections[current.activeLegIndex] = id
         _state.update { derive(it.copy(selectedRouteIds = selections)) }
+    }
+
+    fun selectChoice(id: String) {
+        if (_state.value.tradeoffs?.choices?.none { it.id == id } != false) return
+        if (_state.value.driving.active) stopDriving()
+        _state.update { derive(it.copy(selectedChoiceId = id)) }
     }
 
     fun clearError() {
@@ -781,24 +915,27 @@ class PlannerViewModel private constructor(
         journey.legs.forEachIndexed { legIndex, leg ->
             val route = leg.routes.find { it.id == current.selectedRouteIds.getOrNull(legIndex) }
                 ?: leg.routes.firstOrNull() ?: return null
-            val plan = route.plans[current.allowanceValue] ?: route.baseline
+            val plan = current.selectedChoice?.legs?.getOrNull(legIndex)?.plan ?: route.plans[current.allowanceValue] ?: route.baseline
             val from = leg.places.firstOrNull()?.label.orEmpty()
             val to = leg.places.lastOrNull()?.label.orEmpty()
             rows += listOf("section_total", legIndex + 1, from, to, "", "", route.label, "", "", "", "", "", plan.minutes, plan.liters, route.distanceKm)
             route.segments.forEachIndexed { index, segment ->
                 rows += listOf(
                     "segment", legIndex + 1, from, to, segment.startM / 1000.0, segment.endM / 1000.0, segment.name,
-                    segment.limitKmh ?: "", plan.speedKmh.getOrNull(index) ?: "",
+                    segment.limitKmh ?: if (segment.limitUnlimited) "unlimited" else "", plan.speedKmh.getOrNull(index) ?: "",
                     plan.speedKmh.getOrNull(index + 1) ?: "", segment.heightStartM, segment.heightEndM,
                     "", "", "",
                 )
             }
         }
         current.totals?.let { rows += listOf("journey_total", "", "", "", "", "", "", "", "", "", "", "", it.minutes, it.liters, it.distanceKm) }
-        return rows.joinToString("\r\n") { row -> row.joinToString(",") { csvCell(it) } }
+        val mode = if (journey.ignoresSpeedLimits) "theoretical_ignore_speed_limits" else "mapped_speed_limits"
+        return rows.mapIndexed { index, row -> row + if (index == 0) "calculation_mode" else mode }
+            .joinToString("\r\n") { row -> row.joinToString(",") { csvCell(it) } }
     }
 
-    fun exportFileName(): String = "eco-route-journey-speed-plan.csv"
+    fun exportFileName(): String = if (_state.value.journey?.ignoresSpeedLimits == true)
+        "eco-route-theoretical-journey-speed-plan.csv" else "eco-route-journey-speed-plan.csv"
 
     private suspend fun search(index: Int, query: String, generation: Long) {
         try {
@@ -807,7 +944,7 @@ class PlannerViewModel private constructor(
             updateAddress(index) {
                 it.copy(
                     suggestions = places, isSearching = false,
-                    error = if (places.isEmpty()) "No matching places found. Add a town, postcode, or country." else null,
+                    error = if (places.isEmpty() && RecentPlaces.matching(_state.value.recentPlaces,query).isEmpty()) "No matching places found. Add a town, postcode, or country." else null,
                 )
             }
         } catch (error: Exception) {
@@ -849,12 +986,14 @@ class PlannerViewModel private constructor(
 
     private fun derive(source: UiState): UiState {
         val journey = source.journey
+        val tradeoffs = source.tradeoffs.takeIf { journey != null }
+        val choice = tradeoffs?.choices?.find { it.id == source.selectedChoiceId } ?: tradeoffs?.initialChoice
         val legIndex = source.activeLegIndex.coerceIn(0, maxOf(0, (journey?.legs?.size ?: 1) - 1))
         val leg = journey?.legs?.getOrNull(legIndex)
         val routeId = source.selectedRouteIds.getOrNull(legIndex)
-        val route = leg?.routes?.find { it.id == routeId } ?: leg?.routes?.firstOrNull()
-        val plan = route?.plans?.get(source.allowanceValue) ?: route?.baseline
-        val totals = journey?.let {
+        val route = choice?.legs?.getOrNull(legIndex)?.route ?: leg?.routes?.find { it.id == routeId } ?: leg?.routes?.firstOrNull()
+        val plan = choice?.legs?.getOrNull(legIndex)?.plan ?: route?.plans?.get(source.allowanceValue) ?: route?.baseline
+        val totals = if (choice != null && tradeoffs != null) tradeoffs.totals(choice, source.fuelPrice?.currentPrice(source.vehicle.fuelType)) else journey?.let {
             calculateTripTotals(
                 journey = it, selectedRouteIds = source.selectedRouteIds,
                 allowanceValue = source.allowanceValue, fuelPrice = source.fuelPrice,
@@ -862,6 +1001,8 @@ class PlannerViewModel private constructor(
             )
         }
         return source.copy(
+            tradeoffs = tradeoffs, selectedChoiceId = choice?.id,
+            selectedRouteIds = choice?.legs?.map { it.route.id } ?: source.selectedRouteIds,
             activeLegIndex = legIndex, selectedLeg = leg, selectedRoute = route, selectedPlan = plan,
             totals = totals, fullRouteJson = journey?.fullRouteJson,
         )
@@ -890,7 +1031,7 @@ class PlannerViewModel private constructor(
             updateStop(id) {
                 it.copy(
                     suggestions = places, isSearching = false,
-                    error = if (places.isEmpty()) "No matching places found. Add a town, postcode, or country." else null,
+                    error = if (places.isEmpty() && RecentPlaces.matching(_state.value.recentPlaces,query).isEmpty()) "No matching places found. Add a town, postcode, or country." else null,
                 )
             }
         } catch (error: Exception) {
@@ -907,10 +1048,12 @@ class PlannerViewModel private constructor(
     private fun address(index: Int): AddressState = if (index == 0) _state.value.origin else _state.value.destination
 
     private fun clearJourney() {
+        stopDriving()
         _state.update { derive(it.copy(journey = null, selectedRouteIds = emptyList(), activeLegIndex = 0, error = null)) }
     }
 
     private fun invalidateCalculation() {
+        stopDriving()
         calculationGeneration++
         calculationJob?.cancel()
         calculationJob = null
@@ -1033,6 +1176,7 @@ class PlannerViewModel private constructor(
         private const val VEHICLE_ASSUMPTION_ORIGIN = "vehicle_assumption_origin_v1"
         private const val VEHICLE_ADDITIONAL_LOAD_KG_V4 = "vehicle_additional_load_kg_v1"
         private const val TRIP_LOAD_KG = "trip_load_kg_v1"
+        private const val IGNORE_SPEED_LIMITS = "ignore_speed_limits_v1"
         private const val LOAD_MIGRATION_COMPLETE = "vehicle_load_migrated_v5"
         private const val VEHICLE_SEARCH_DEBOUNCE_MS = 450L
         private const val VEHICLE_SEARCH_TIMEOUT_MS = 12_000L

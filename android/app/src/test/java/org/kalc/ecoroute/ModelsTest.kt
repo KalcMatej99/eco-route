@@ -166,7 +166,7 @@ class ModelsTest {
         val journey = EcoJson.parseJourney(json)
         val price = FuelPrice(
             currency = "EUR", prices = mapOf("diesel" to 1.9),
-            validFrom = LocalDate.of(2026, 10, 1), validUntil = LocalDate.of(2026, 10, 7),
+            validFrom = LocalDate.now(java.time.ZoneId.of("Europe/Ljubljana")).minusDays(1), validUntil = LocalDate.now(java.time.ZoneId.of("Europe/Ljubljana")).plusDays(1),
             checkedAt = "", sourceName = "", sourceUrl = "",
         )
 

@@ -15,6 +15,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performScrollTo
@@ -25,7 +26,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertTrue
-import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +36,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-/** Requires internet and the Tailscale connection for the private Eco Route service. */
+/** Requires internet for public address, routing and map data. */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalTestApi::class)
@@ -119,20 +120,21 @@ class PlanningFlowTest {
         Thread.sleep(500)
         saveScreenshot("v060-results-collapsed-360-font130")
         compose.onNodeWithTag("sheet-toggle").performClick()
-        compose.waitUntilExactlyOneExists(hasText("A → B · Outbound"), ROUND_TRIP_TIMEOUT_MS)
+        compose.onNodeWithTag("planner-sheet").performScrollToNode(hasText("A → B · Outbound"))
+        compose.onNodeWithText("A → B · Outbound").assertExists()
         saveScreenshot("v060-results-expanded-top-360-font130")
-        compose.onNodeWithTag("planner-sheet").performScrollToNode(hasTestTag("allowance-percent-10"))
-        compose.onNodeWithTag("allowance-percent-10").assertExists()
-        val outboundAllowance = allowanceLabel()
+        compose.onNodeWithTag("planner-sheet").performScrollToNode(hasTestTag("time-fuel-plot"))
+        compose.onNodeWithTag("time-fuel-plot").assertExists()
+        val outboundGraph = graphSelectionLabel()
         Thread.sleep(500)
         saveScreenshot("v060-results-expanded-360-font130")
         saveScreenshot("roundtrip-outbound-results-percent")
         compose.onNodeWithTag("planner-sheet").performScrollToNode(hasText("B → A · Return"))
-        compose.onNodeWithText("B → A · Return").performClick()
+        compose.onNodeWithTag("leg-1").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick) { it() }
         compose.onNodeWithText("B → A · Return").assertIsSelected()
-        compose.onNodeWithTag("planner-sheet").performScrollToNode(hasTestTag("allowance-percent-10"))
-        val returnAllowance = allowanceLabel()
-        assertNotEquals("Each direction must expose its independently calculated percentage minutes", outboundAllowance, returnAllowance)
+        compose.onNodeWithTag("planner-sheet").performScrollToNode(hasTestTag("time-fuel-plot"))
+        val returnGraph = graphSelectionLabel()
+        assertEquals("The graph selection describes the whole journey across both directions", outboundGraph, returnGraph)
         saveScreenshot("roundtrip-return-results-percent")
         compose.onNodeWithTag("planner-sheet").performScrollToIndex(0)
         compose.onNodeWithTag("sheet-toggle").performClick()
@@ -295,11 +297,8 @@ class PlanningFlowTest {
         return null
     }
 
-    private fun allowanceLabel(): String = compose
-        .onNodeWithTag("allowance-percent-10")
-        .fetchSemanticsNode()
-        .config[SemanticsProperties.Text]
-        .joinToString(" ") { it.text }
+    private fun graphSelectionLabel(): String = compose.onNodeWithTag("time-fuel-plot")
+        .fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsProperties.StateDescription]
 
     private fun saveEvidence(name: String, evidence: MapEvidence) {
         saveScreenshot(name)

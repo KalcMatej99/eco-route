@@ -11,7 +11,7 @@ import kotlin.coroutines.coroutineContext
 /** Online road data in; all vehicle physics, speed search and totals run locally. */
 internal class HybridPlanner(private val online: OnlineData) {
     suspend fun calculate(places: List<Place>, vehicleJson: JSONObject, roundTrip: Boolean,
-        allowance: TimeAllowanceRequest, progress: (String) -> Unit): String {
+        allowance: TimeAllowanceRequest, ignoreSpeedLimits: Boolean = false, progress: (String) -> Unit): String {
         require(places.size in 2..10)
         require(allowance.mode != TimeAllowanceMode.MINUTES || allowance.minutes in 1..120)
         val itinerary = places + if (roundTrip) listOf(places.first()) else emptyList()
@@ -20,7 +20,7 @@ internal class HybridPlanner(private val online: OnlineData) {
         }
         val legs = JSONArray()
         for ((i, pair) in itinerary.zipWithNext().withIndex()) {
-            legs.put(calculateLeg(pair.first, pair.second, vehicleJson, allowance) { progress("Section ${i + 1} of ${itinerary.size - 1} · $it") })
+            legs.put(calculateLeg(pair.first, pair.second, vehicleJson, allowance, ignoreSpeedLimits) { progress("Section ${i + 1} of ${itinerary.size - 1} · $it") })
         }
         if (places.size == 2 && !roundTrip) return legs.getJSONObject(0).toString()
         val totals = JSONObject()
@@ -36,12 +36,12 @@ internal class HybridPlanner(private val online: OnlineData) {
             }
             totals.put(key, JSONObject().put("liters", liters).put("minutes", minutes).put("distance_km", distance))
         }
-        return JSONObject().put("trip_type", if (places.size > 2) "multi_stop" else "round_trip")
+        return JSONObject().put("ignore_speed_limits", ignoreSpeedLimits).put("trip_type", if (places.size > 2) "multi_stop" else "round_trip")
             .put("round_trip", roundTrip).put("places", JSONArray(itinerary.map(::placeJson)))
             .put("legs", legs).put("totals", totals).toString()
     }
 
-    private suspend fun calculateLeg(a: Place, b: Place, vehicleJson: JSONObject, allowance: TimeAllowanceRequest, progress: (String) -> Unit): JSONObject {
+    private suspend fun calculateLeg(a: Place, b: Place, vehicleJson: JSONObject, allowance: TimeAllowanceRequest, ignoreSpeedLimits: Boolean, progress: (String) -> Unit): JSONObject {
         val candidates = mutableListOf<RoadLoadModel.Route>(); val shapes = mutableSetOf<String>(); val warnings = mutableSetOf<String>()
         val points = JSONArray(listOf(JSONObject().put("lat", a.lat).put("lon", a.lon), JSONObject().put("lat", b.lat).put("lon", b.lon)))
         for ((id, label, options) in listOf(
@@ -68,7 +68,7 @@ internal class HybridPlanner(private val online: OnlineData) {
                     val trace = JSONObject(online.request(PublicDataClient.ROUTER + "/trace_attributes", traceRequest, PublicDataClient.SEVEN_DAYS))
                     val route = withContext(Dispatchers.Default) {
                         val context = coroutineContext
-                        RoadLoadModel.prepare(if (index == 0) id else "$id-alt-$index", label + if (index > 0) " alternative" else "", trip, trace) { context.ensureActive() }
+                        RoadLoadModel.prepare(if (index == 0) id else "$id-alt-$index", label + if (index > 0) " alternative" else "", trip, trace, ignoreSpeedLimits) { context.ensureActive() }
                     }
                     if (RoadLoadModel.distance(route.coordinates.first(), GeoPoint(a.lat, a.lon)) > 1000 || RoadLoadModel.distance(route.coordinates.last(), GeoPoint(b.lat, b.lon)) > 1000) {
                         warnings.add("A route was omitted because road access was too far from the selected location."); continue
@@ -88,7 +88,8 @@ internal class HybridPlanner(private val online: OnlineData) {
             val baselines = candidates.map { RoadLoadModel.evaluate(it, it.caps, vehicle) }
             val fastest = baselines.minOf { it.seconds } / 60
             val values = if (allowance.mode == TimeAllowanceMode.PERCENT) listOf(0, 5, 10, 15) else listOf(0, requireNotNull(allowance.minutes))
-            val deadlines = values.associateWith { (fastest + if (allowance.mode == TimeAllowanceMode.PERCENT) fastest * it / 100 else it.toDouble()) * 60 }
+            val samples = if (allowance.mode == TimeAllowanceMode.PERCENT) listOf(0, 5, 10, 15, 20, 30, 45, 60) else values
+            val deadlines = samples.associateWith { (fastest + if (allowance.mode == TimeAllowanceMode.PERCENT) fastest * it / 100 else it.toDouble()) * 60 }
             val routes = JSONArray(); var computeNanos = 0L
             for ((index, r) in candidates.withIndex()) {
                 checkpoint(); progress("Optimizing speeds on your phone · route ${index + 1} of ${candidates.size}…")
@@ -96,7 +97,15 @@ internal class HybridPlanner(private val online: OnlineData) {
                 val plans = JSONObject()
                 if (baselines[index].seconds <= deadlines.values.max()) {
                     val graph = RoadLoadModel.graph(r, vehicle, checkpoint)
-                    for ((value, deadline) in deadlines) RoadLoadModel.optimize(r, graph, deadline, vehicle, checkpoint)?.let { plans.put(value.toString(), RoadLoadModel.pack(r, it, vehicle)) }
+                    var minimumFuel: RoadLoadModel.Plan? = null
+                    for ((value, deadline) in deadlines) {
+                        checkpoint()
+                        val plan = minimumFuel ?: RoadLoadModel.optimize(r, graph, deadline, vehicle, checkpoint)
+                        plan?.let {
+                            plans.put(value.toString(), RoadLoadModel.pack(r, it, vehicle))
+                            if (it.optimization?.optString("method") == "minimum_fuel_dynamic_programming") minimumFuel = it
+                        }
+                    }
                 }
                 computeNanos += System.nanoTime() - started
                 routes.put(JSONObject(r.metadata.toString()).put("coordinates", JSONArray(r.coordinates.map { JSONArray(listOf(it.lat, it.lon)) }))
@@ -108,14 +117,14 @@ internal class HybridPlanner(private val online: OnlineData) {
                 val winner = eligible.minByOrNull { it.getJSONObject("plans").getJSONObject(value.toString()).getDouble("liters") } ?: throw EcoApiException("Unable to calculate a feasible speed plan. Try another trip.")
                 recommendations.put(value.toString(), winner.getString("id"))
             }
-            JSONObject().put("generated_at", Instant.now().toString()).put("fuel_model_version", RoadLoadModel.VERSION)
+            JSONObject().put("ignore_speed_limits", ignoreSpeedLimits).put("generated_at", Instant.now().toString()).put("fuel_model_version", RoadLoadModel.VERSION)
                 .put("calculation_location", "device").put("optimization_duration_ms", computeNanos / 1e6)
                 .put("config", JSONObject().put("vehicle", vehicleJson)).put("places", JSONArray(listOf(placeJson(a), placeJson(b))))
                 .put("points", points).put("routes", routes).put("recommendations", recommendations).put("fastest_minutes", fastest)
                 .put("warnings", JSONArray(warnings.toList())).put("time_allowance", JSONObject().put("mode", allowance.mode.wireValue).put("options", JSONArray(values.map { value ->
                     JSONObject().put("value", value).put("extra_minutes", deadlines.getValue(value) / 60 - fastest).put("max_minutes", deadlines.getValue(value) / 60)
                 }))).put("data_note", "Online road data cached on this device for up to 7 days. No traffic. Uncalibrated engine-on estimate; no hybrid battery or fuel-cutoff simulation.")
-                .put("method", "Finite candidate routes and discrete motorway speeds; local dynamic programming/Pareto refinement, not a guaranteed global optimum.")
+                .put("method", if (ignoreSpeedLimits) "Theoretical speeds on all road sections within a 130 km/h model ceiling; mapped limits and provider speeds are not calculation ceilings. Finite candidate routes and discrete speeds; not a guaranteed global optimum." else "Finite candidate routes and discrete motorway speeds; local dynamic programming/Pareto refinement, not a guaranteed global optimum.")
         }
     }
     companion object {

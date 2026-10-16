@@ -64,6 +64,39 @@ internal fun MapPlannerScreen(
     onOpenVehicle: () -> Unit,
     onExport: () -> Unit,
 ) {
+    val drivingContext = LocalContext.current
+    var showDrivingIntro by remember { mutableStateOf(false) }
+    var drivingPermissionError by remember { mutableStateOf(false) }
+    val drivingPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+        if (grants[Manifest.permission.ACCESS_FINE_LOCATION] == true) vm.startDriving()
+        else drivingPermissionError = true
+    }
+    if (showDrivingIntro) AlertDialog(
+        onDismissRequest = { showDrivingIntro = false },
+        title = { Text("Start driving mode") },
+        text = { Text("Set up while parked. Eco Route follows your GPS position and shows the selected route's modeled speed estimate. Always follow road signs, traffic and conditions. Precise location is needed; tracking pauses when you leave the app.") },
+        confirmButton = { TextButton(onClick = {
+            showDrivingIntro = false
+            if (ContextCompat.checkSelfPermission(drivingContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) vm.startDriving()
+            else drivingPermission.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION))
+        }, modifier = Modifier.testTag("confirm-start-driving")) { Text("Start driving") } },
+        dismissButton = { TextButton(onClick = { showDrivingIntro = false }) { Text("Cancel") } },
+    )
+    if (drivingPermissionError) AlertDialog(
+        onDismissRequest = { drivingPermissionError = false },
+        title = { Text("Precise location needed") },
+        text = { Text("Allow precise location in Android app settings to follow your position along the road.") },
+        confirmButton = { TextButton(onClick = {
+            drivingPermissionError = false
+            drivingContext.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${drivingContext.packageName}")))
+        }) { Text("App settings") } },
+        dismissButton = { TextButton(onClick = { drivingPermissionError = false }) { Text("Close") } },
+    )
+    if (state.driving.active) {
+        DrivingScreen(state, vm)
+        return
+    }
+    val startDriving: () -> Unit = { showDrivingIntro = true }
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -136,6 +169,7 @@ internal fun MapPlannerScreen(
                         toggleEnabled = false,
                         onOpenVehicle = onOpenVehicle,
                         onExport = onExport,
+                        onStartDriving = startDriving,
                         onEditRoute = {
                             activeAddress = AddressTarget.DESTINATION
                             editingAddress = true
@@ -168,6 +202,7 @@ internal fun MapPlannerScreen(
                 },
                 onOpenVehicle = onOpenVehicle,
                 onExport = onExport,
+                onStartDriving = startDriving,
                 onEditRoute = {
                     activeAddress = AddressTarget.DESTINATION
                     editingAddress = true
@@ -242,7 +277,6 @@ private fun MapTopBar(onOpenVehicle: () -> Unit) {
             Icon(Icons.Default.Route, null, tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(10.dp))
             Text("Eco Route", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text("PILOT", style = MaterialTheme.typography.labelSmall)
             IconButton(onClick = onOpenVehicle, modifier = Modifier.testTag("vehicle-settings")) {
                 Icon(Icons.Default.Settings, "Vehicle settings")
             }
@@ -403,32 +437,21 @@ private fun AddressOverlay(
                     }
                     Text("Your selected position stays here until you calculate, then coordinates are sent to the online road-data provider.",style=MaterialTheme.typography.bodySmall)
                 }
-                address.suggestions.take(5).forEach { place ->
-                    Surface(
-                        onClick = {
-                            val completesTrip = if (active == AddressTarget.ORIGIN) state.destination.selected != null else state.origin.selected != null
-                            vm.selectPlace(active.index, place)
-                            keyboard?.hide()
-                            if (completesTrip) {
-                                onDoneEditing()
-                                if (state.stops.isEmpty()) vm.calculate()
-                                onSecondEndpointSelected()
-                            } else {
-                                onActiveChange(if (active == AddressTarget.DESTINATION) AddressTarget.ORIGIN else AddressTarget.DESTINATION)
-                            }
-                        },
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier.fillMaxWidth().testTag("address-suggestion-${place.id}"),
-                    ) {
-                        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                            Text(place.title, fontWeight = FontWeight.Medium)
-                            if (place.detail.isNotBlank()) Text(place.detail, style = MaterialTheme.typography.bodySmall)
+                AddressSuggestions(address,state.recentPlaces,"address-suggestion",showWhenSelected = true,
+                    onSelect = { place ->
+                        val completesTrip = if (active == AddressTarget.ORIGIN) state.destination.selected != null else state.origin.selected != null
+                        vm.selectPlace(active.index, place)
+                        keyboard?.hide()
+                        if (completesTrip) {
+                            onDoneEditing()
+                            if (state.stops.isEmpty()) vm.calculate()
+                            onSecondEndpointSelected()
+                        } else {
+                            onActiveChange(if (active == AddressTarget.DESTINATION) AddressTarget.ORIGIN else AddressTarget.DESTINATION)
                         }
-                    }
-                }
-                if (address.selected == null && address.text.length >= 3 && !address.isSearching && address.suggestions.isEmpty() && address.error == null) {
-                    Text("Choose an address from the suggestions.", style = MaterialTheme.typography.bodySmall)
+                    },onRemove = vm::removeRecentPlace,onClear = vm::clearRecentPlaces)
+                if (address.selected == null && address.text.length >= 3 && !address.isSearching && address.suggestions.isEmpty() && RecentPlaces.matching(state.recentPlaces,address.text).isEmpty() && address.error == null) {
+                    Text("No matching places found. Add a town, postcode, or country.", style = MaterialTheme.typography.bodySmall)
                 }
                 address.error?.let {
                     Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -470,6 +493,7 @@ private fun PlannerSheet(
     onExport: () -> Unit,
     onEditRoute: () -> Unit,
     onNewRoute: () -> Unit,
+    onStartDriving: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -485,6 +509,12 @@ private fun PlannerSheet(
             SheetPeek(state, expanded, onToggleExpanded, toggleEnabled)
         }
         item { HorizontalDivider() }
+        if (state.ignoreSpeedLimits) {
+            item { SheetSection {
+                Text("Theoretical calculation", fontWeight = FontWeight.Bold, modifier = Modifier.testTag("theoretical-mode-label"))
+                Text("Speed limits ignored · 130 km/h model maximum. Live driving requires a plan with speed limits enabled.", style = MaterialTheme.typography.bodySmall)
+            } }
+        }
         if (state.isCalculating) {
             item {
                 SheetSection {
@@ -508,10 +538,22 @@ private fun PlannerSheet(
             }
         }
         if (state.journey != null) {
-            item { SheetSection { LegSelector(state, vm) } }
-            state.selectedLeg?.let { leg ->
-                items(leg.routes, key = { it.id }) { route -> RouteOption(state, leg, route, vm::selectRoute) }
+            state.tradeoffs?.let { tradeoffs ->
+                state.selectedChoice?.let { choice ->
+                    item { SheetSection { TimeFuelChart(tradeoffs, choice, state.fuelPrice?.currentPrice(state.vehicle.fuelType), vm::selectChoice) } }
+                }
             }
+            item {
+                SheetSection {
+                    Button(onClick = onStartDriving, enabled = state.selectedRoute != null && !state.isCalculating && !state.ignoreSpeedLimits && !state.journey.ignoresSpeedLimits,
+                        modifier = Modifier.fillMaxWidth().testTag("start-driving")) {
+                        Icon(Icons.Default.Navigation, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Start driving")
+                    }
+                }
+            }
+            item { SheetSection { LegSelector(state, vm) } }
             state.totals?.let { totals ->
                 item {
                     SheetSection {
@@ -555,7 +597,15 @@ private fun PlannerSheet(
                     FilterChip(selected = state.roundTrip, onClick = { vm.setRoundTrip(true) }, label = { Text("Return to start") })
                 }
                 IntermediateStopsEditor(state, vm, onEditRoute)
-                Allowance(state, vm)
+                Text("After calculating, choose your arrival time and fuel savings on the graph.", style = MaterialTheme.typography.bodySmall)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text("Ignore speed limits", fontWeight = FontWeight.SemiBold)
+                        Text("Theoretical calculations up to 130 km/h. Changing this setting clears the current plan.", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Switch(checked = state.ignoreSpeedLimits, onCheckedChange = vm::setIgnoreSpeedLimits,
+                        modifier = Modifier.testTag("ignore-speed-limits").semantics { contentDescription = "Ignore speed limits" })
+                }
                 TripLoad(state, vm)
                 if (state.origin.selected != null && state.destination.selected != null && !state.isCalculating) {
                     Button(onClick = vm::calculate, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("recalculate")) {
@@ -627,21 +677,11 @@ private fun IntermediateStopsEditor(state: UiState, vm: PlannerViewModel, onEdit
                     modifier = Modifier.fillMaxWidth().testTag("stop-field-${stop.id}"),
                     shape = RoundedCornerShape(14.dp),
                 )
-                address.suggestions.take(5).forEach { place ->
-                    Surface(
-                        onClick = { vm.selectStopPlace(stop.id, place); keyboard?.hide() },
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        modifier = Modifier.fillMaxWidth().testTag("stop-suggestion-${stop.id}-${place.id}"),
-                    ) {
-                        Column(Modifier.padding(12.dp)) {
-                            Text(place.title, fontWeight = FontWeight.Medium)
-                            if (place.detail.isNotBlank()) Text(place.detail, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-                if (address.selected == null && address.text.length >= 3 && !address.isSearching && address.suggestions.isEmpty() && address.error == null) {
-                    Text("Choose an address from the suggestions.", style = MaterialTheme.typography.bodySmall)
+                AddressSuggestions(address,state.recentPlaces,"stop-suggestion-${stop.id}",
+                    onSelect = { place -> vm.selectStopPlace(stop.id,place); keyboard?.hide() },
+                    onRemove = vm::removeRecentPlace,onClear = vm::clearRecentPlaces)
+                if (address.selected == null && address.text.length >= 3 && !address.isSearching && address.suggestions.isEmpty() && RecentPlaces.matching(state.recentPlaces,address.text).isEmpty() && address.error == null) {
+                    Text("No matching places found. Add a town, postcode, or country.", style = MaterialTheme.typography.bodySmall)
                 }
                 address.error?.let {
                     Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -684,7 +724,7 @@ private fun SheetPeek(state: UiState, expanded: Boolean, onToggleExpanded: () ->
             }
             when {
                 state.isCalculating -> {
-                    Text("Calculating route…", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(if (state.ignoreSpeedLimits) "Calculating theoretical route…" else "Calculating route…", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(state.progressMessage ?: "Comparing time and fuel", maxLines = 2)
                 }
                 state.totals != null -> {
@@ -692,9 +732,10 @@ private fun SheetPeek(state: UiState, expanded: Boolean, onToggleExpanded: () ->
                     val multiSection = (state.journey?.legs?.size ?: 0) > 1
                     val legacyRoundTrip = state.journey?.tripType == "round_trip"
                     Text(
-                        if (legacyRoundTrip) "Round-trip total · map: ${if (state.activeLegIndex == 0) "outbound" else "return"}"
+                        if (state.ignoreSpeedLimits) "Theoretical · speed limits ignored"
+                        else if (legacyRoundTrip) "Round-trip total · map: ${if (state.activeLegIndex == 0) "outbound" else "return"}"
                         else if (multiSection) "Journey total · map: section ${state.activeLegIndex + 1} of ${state.journey?.legs?.size}"
-                        else state.selectedRoute?.label ?: "Selected journey",
+                        else "Selected journey",
                         style = MaterialTheme.typography.labelLarge,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(18.dp), verticalAlignment = Alignment.Bottom) {
@@ -713,7 +754,7 @@ private fun SheetPeek(state: UiState, expanded: Boolean, onToggleExpanded: () ->
                     Text("Expand for the error and retry.", style = MaterialTheme.typography.bodyMedium)
                 }
                 else -> {
-                    Text("Plan details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(if (state.ignoreSpeedLimits) "Theoretical trip options" else "Plan details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("Destination first, then choose your starting point.", style = MaterialTheme.typography.bodyMedium)
                     Text("Trip options and vehicle load", style = MaterialTheme.typography.bodySmall)
                 }
@@ -730,39 +771,4 @@ private fun SheetSection(content: @Composable ColumnScope.() -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
         content = content,
     )
-}
-
-@Composable
-private fun RouteOption(state: UiState, leg: LegReport, route: RouteReport, onSelect: (String) -> Unit) {
-    val plan = route.plans[state.allowanceValue] ?: route.baseline
-    val fastestBaseline = leg.routes.minByOrNull { it.baseline.minutes }?.baseline ?: route.baseline
-    val litersSaved = fastestBaseline.liters - plan.liters
-    val addedMinutes = (plan.minutes - leg.fastestMinutes).coerceAtLeast(0.0)
-    val selected = state.selectedRoute?.id == route.id
-    Card(
-        onClick = { onSelect(route.id) },
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp).testTag("route-option-${route.id}"),
-        shape = RoundedCornerShape(18.dp),
-        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(if (selected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked, null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(10.dp))
-                Text(route.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            }
-            Text("${plan.liters.display(2)} L · ${timeLabel(plan.minutes)} · ${route.distanceKm.display()} km")
-            state.fuelPrice?.currentPrice(leg.vehicle?.fuelType ?: state.vehicle.fuelType)?.let {
-                Text("€${(plan.liters * it).display(2)} estimated fuel cost", style = MaterialTheme.typography.bodyMedium)
-            }
-            Text("Modeled +${addedMinutes.display()} min vs fastest · ${if (litersSaved >= 0) "save" else "use"} ${abs(litersSaved).display(2)} L", style = MaterialTheme.typography.bodySmall)
-            Text(
-                if (route.plans[state.allowanceValue] == null) "Outside allowance · showing baseline"
-                else if (leg.recommendations[state.allowanceValue] == route.id) "Lowest estimated fuel within allowance"
-                else "Within allowance",
-                color = if (route.plans[state.allowanceValue] == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelMedium,
-            )
-        }
-    }
 }

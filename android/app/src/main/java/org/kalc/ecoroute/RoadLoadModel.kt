@@ -7,6 +7,7 @@ import kotlin.math.*
 /** road-load-v2, ported without changing the audited fuel equation or search bounds. */
 internal object RoadLoadModel {
     const val VERSION = "road-load-v2"
+    const val MAX_SPEED_KMH = 130.0
     data class Vehicle(val mass: Double, val drag: Double, val rolling: Double,
         val efficiency: Double, val auxiliary: Double, val overhead: Double, val energy: Double,
         val density: Double = 1.225) {
@@ -66,7 +67,7 @@ internal object RoadLoadModel {
         }
     }
 
-    fun prepare(id: String, label: String, trip: JSONObject, trace: JSONObject, checkpoint: () -> Unit = {}): Route {
+    fun prepare(id: String, label: String, trip: JSONObject, trace: JSONObject, ignoreSpeedLimits: Boolean = false, checkpoint: () -> Unit = {}): Route {
         val coords = decodePolyline(trace.getString("shape"))
         require(coords.size >= 2) { "Road geometry is missing." }
         val cumulative = DoubleArray(coords.size)
@@ -107,13 +108,16 @@ internal object RoadLoadModel {
             delay += e.optJSONObject("end_node")?.optDouble("transition_time", 0.0) ?: 0.0
             val start = cumulative[e.getInt("begin_shape_index")]; val end = cumulative[e.getInt("end_shape_index")]
             if (end - start < 0.01) continue
-            val limit = e.optDouble("speed_limit", Double.NaN); val known = limit.isFinite() && limit > 0 && limit < 200
+            val limit = e.optDouble("speed_limit", Double.NaN); val known = limit.isFinite() && limit > 0
+            val unlimited = e.optString("speed_limit") == "unlimited"
             val motorway = e.getString("road_class") == "motorway" && e.getString("use") == "road" && !e.optBoolean("roundabout")
             val routerSpeed = e.getDouble("speed")
-            val capKmh = if (motorway && known) min(limit, 130.0) else min(min(routerSpeed, if (known) limit else routerSpeed), 130.0)
+            val capKmh = if (ignoreSpeedLimits) MAX_SPEED_KMH
+                else if (motorway && known) min(limit, MAX_SPEED_KMH)
+                else min(min(routerSpeed, if (known) limit else routerSpeed), MAX_SPEED_KMH)
             require(capKmh.isFinite() && capKmh > 0) { "Road speed data is invalid." }
-            val basis = if (motorway && known) "mapped_limit_motorway" else if (known) "router_static_speed_and_mapped_limit" else "router_static_speed_unknown_limit"
-            val adjustable = motorway && known && capKmh >= 80
+            val basis = if (ignoreSpeedLimits) "theoretical_model_ceiling" else if (motorway && known) "mapped_limit_motorway" else if (known) "router_static_speed_and_mapped_limit" else if (unlimited) "router_static_speed_unlimited" else "router_static_speed_unknown_limit"
+            val adjustable = ignoreSpeedLimits || (motorway && known && capKmh >= 80)
             if (known) knownMeters += end - start
             val count = ceil((end - start) / 250).toInt()
             val names = e.optJSONArray("names") ?: JSONArray()
@@ -124,12 +128,13 @@ internal object RoadLoadModel {
                 val json = JSONObject().put("start_m", a).put("end_m", b).put("distance_m", b - a)
                     .put("height_start_m", h0).put("height_end_m", h1).put("optimize", adjustable)
                     .put("name", name).put("road_class", e.getString("road_class"))
-                    .put("limit_kmh", if (known) limit else JSONObject.NULL).put("tunnel", e.optBoolean("tunnel"))
+                    .put("limit_kmh", if (known) limit else JSONObject.NULL).put("limit_unlimited", unlimited).put("tunnel", e.optBoolean("tunnel"))
                     .put("structure_name_hint", structureHint(e)).put("provider_speed_kmh", routerSpeed)
                     .put("cruise_cap_kmh", capKmh).put("router_static_speed_kmh", routerSpeed)
                     .put("speed_envelope_kmh", capKmh).put("speed_envelope_basis", basis)
-                    .put("speed_basis", if (motorway && known) "mapped_motorway_limit" else "provider_estimate")
-                    .put("speed_envelope_detail", if (motorway && known) "Mapped motorway limit, bounded by the 130 km/h model maximum. Static routing speed is ETA context." else "Static routing speed bounded by the mapped limit where available.")
+                    .put("speed_basis", if (ignoreSpeedLimits) "theoretical" else if (motorway && known) "mapped_motorway_limit" else "provider_estimate")
+                    .put("ignore_speed_limits", ignoreSpeedLimits)
+                    .put("speed_envelope_detail", if (ignoreSpeedLimits) "Theoretical 130 km/h model ceiling; mapped limits and provider speeds are not calculation ceilings." else if (motorway && known) "Mapped motorway limit, bounded by the 130 km/h model maximum. Static routing speed is ETA context." else "Static routing speed bounded by the mapped limit where available.")
                     .put("speed_choice_detail", "Modeled speed may be below the envelope for fuel savings or acceleration/deceleration bounds.")
                 segments.add(Segment(b - a, h0, h1, capKmh / 3.6, adjustable, json))
             }
@@ -147,7 +152,7 @@ internal object RoadLoadModel {
             }
             choices.distinct().sorted().toDoubleArray()
         }
-        val metadata = JSONObject().put("id", id).put("label", label).put("distance_km", total / 1000)
+        val metadata = JSONObject().put("ignore_speed_limits", ignoreSpeedLimits).put("id", id).put("label", label).put("distance_km", total / 1000)
             .put("provider_minutes", trip.getJSONObject("summary").getDouble("time") / 60)
             .put("known_speed_limit_pct", 100 * knownMeters / total).put("structure_interpolation_km", corrected / 1000)
             .put("structure_name_fallback_km", inferredMeters / 1000)

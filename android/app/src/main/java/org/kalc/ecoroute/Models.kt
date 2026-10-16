@@ -222,6 +222,7 @@ data class Segment(
     val heightStartM: Double,
     val heightEndM: Double,
     val rawJson: String,
+    val limitUnlimited: Boolean = false,
 )
 
 data class RouteReport(
@@ -237,6 +238,7 @@ data class RouteReport(
     val plans: Map<Int, Plan>,
     val segments: List<Segment>,
     val rawJson: String,
+    val ignoreSpeedLimits: Boolean = false,
 )
 
 data class ReportVehicle(val name: String, val fuelType: String, val massKg: Double)
@@ -285,7 +287,9 @@ data class Journey(
     val fullRouteJson: String,
     val places: List<Place> = emptyList(),
     val roundTrip: Boolean = tripType == "round_trip",
-)
+) {
+    val ignoresSpeedLimits: Boolean get() = legs.any { leg -> leg.routes.any { it.ignoreSpeedLimits } }
+}
 
 fun Journey.matchesTimeAllowance(request: TimeAllowanceRequest): Boolean {
     val expected = if (request.mode == TimeAllowanceMode.PERCENT) setOf(0, 5, 10, 15)
@@ -383,6 +387,7 @@ fun calculateTripTotals(
 data class UiState(
     val origin: AddressState = AddressState(),
     val destination: AddressState = AddressState(),
+    val recentPlaces: List<Place> = emptyList(),
     val stops: List<IntermediateStop> = emptyList(),
     val vehicle: VehicleFields = VehicleFields.DEFAULT,
     val vehicleDraft: VehicleFields = vehicle,
@@ -402,12 +407,14 @@ data class UiState(
     val vehicleSetupComplete: Boolean = false,
     val vehicleSetupIsLegacyReview: Boolean = false,
     val vehicleDraftError: String? = null,
+    val driving: DrivingState = DrivingState(),
     val isLocating: Boolean = false,
     val locationSelectionVersion: Long = 0,
     val locationSelectionPending: Boolean = false,
     val locationError: String? = null,
     val locationNotice: String? = null,
     val roundTrip: Boolean = false,
+    val ignoreSpeedLimits: Boolean = false,
     val allowanceMode: TimeAllowanceMode = TimeAllowanceMode.PERCENT,
     val allowanceValue: Int = 10,
     val percentAllowanceValues: List<Int> = listOf(0, 5, 10, 15),
@@ -416,6 +423,8 @@ data class UiState(
     val progressMessage: String? = null,
     val error: String? = null,
     val journey: Journey? = null,
+    val tradeoffs: JourneyTradeoffs? = null,
+    val selectedChoiceId: String? = null,
     val activeLegIndex: Int = 0,
     val selectedRouteIds: List<String> = emptyList(),
     val fuelPrice: FuelPrice? = null,
@@ -440,7 +449,10 @@ data class UiState(
         get() = vehicleProfiles.firstOrNull { it.id == activeVehicleProfileId }
 
     val selectedPlanEligible: Boolean
-        get() = selectedRoute?.plans?.containsKey(allowanceValue) == true
+        get() = selectedChoice != null || selectedRoute?.plans?.containsKey(allowanceValue) == true
+
+    val selectedChoice: JourneyChoice?
+        get() = tradeoffs?.choices?.find { it.id == selectedChoiceId }
 
     val selectedAllowanceOption: TimeAllowanceOption?
         get() = selectedLeg?.timeAllowance?.option(allowanceValue)
@@ -455,7 +467,7 @@ data class UiState(
                     .put("title", it.title).put("label", it.label)
             } ?: JSONObject.NULL
             val alternatives = JSONArray()
-            if (hasRoute) selectedLeg?.routes?.filter { it.id != route?.id }?.forEach {
+            if (hasRoute && tradeoffs == null) selectedLeg?.routes?.filter { it.id != route?.id }?.forEach {
                 alternatives.put(JSONObject(it.rawJson))
             }
             val orderedPlaces: List<Place?> = buildList {
@@ -485,7 +497,7 @@ data class UiState(
                 .put("returnLeg", journey?.roundTrip == true && activeLegIndex == journey.legs.lastIndex)
                 .put("direction", if (journey?.roundTrip == true && activeLegIndex == journey.legs.lastIndex) "return" else "leg-${activeLegIndex + 1}")
                 .put("allowanceValue", allowanceValue)
-                .put("selectionKey", if (hasRoute) "$activeLegIndex:${route?.id}:${allowanceMode.wireValue}:$allowanceValue:${selectedLeg?.generatedAt}" else "preview")
+                .put("selectionKey", if (hasRoute) "$activeLegIndex:${route?.id}:${selectedChoiceId ?: "$allowanceValue"}:${selectedLeg?.generatedAt}" else "preview")
                 .toString()
         }
 }
@@ -643,6 +655,7 @@ object EcoJson {
             ascentM = value.optDouble("ascent_m", 0.0), descentM = value.optDouble("descent_m", 0.0),
             coordinates = coordinates, baseline = parsePlan(value.getJSONObject("baseline")),
             plans = plans, segments = segments, rawJson = value.toString(),
+            ignoreSpeedLimits = value.optBoolean("ignore_speed_limits", false),
         )
     }
 
@@ -656,6 +669,7 @@ object EcoJson {
         startM = value.getDouble("start_m"), endM = value.getDouble("end_m"),
         name = value.optString("name"), roadClass = value.optString("road_class"),
         limitKmh = value.optFiniteDouble("limit_kmh"),
+        limitUnlimited = value.optBoolean("limit_unlimited", false),
         heightStartM = value.optDouble("height_start_m", 0.0),
         heightEndM = value.optDouble("height_end_m", 0.0), rawJson = value.toString(),
     )

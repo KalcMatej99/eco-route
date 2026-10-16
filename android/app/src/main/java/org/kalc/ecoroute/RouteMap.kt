@@ -34,7 +34,9 @@ fun RouteMap(
     modifier: Modifier = Modifier,
     viewportInsets: MapViewportInsets = MapViewportInsets(),
     onRouteSelected: (String) -> Unit = {},
+    drivingPayload: String = "{\"active\":false}",
 ) {
+    val latestDrivingPayload = rememberUpdatedState(drivingPayload)
     val latestPayload = rememberUpdatedState(payload)
     val latestInsets = rememberUpdatedState(viewportInsets)
     val latestOnRouteSelected = rememberUpdatedState(onRouteSelected)
@@ -47,7 +49,11 @@ fun RouteMap(
                 "bottom:${insets.bottom.value},left:${insets.start.value}})",
             null,
         )
-        evaluateJavascript("window.renderRoute && window.renderRoute(${latestPayload.value})", null)
+        if (tag != latestPayload.value) {
+            evaluateJavascript("window.renderRoute && window.renderRoute(${latestPayload.value})", null)
+            tag = latestPayload.value
+        }
+        evaluateJavascript("window.updateDriving && window.updateDriving(${latestDrivingPayload.value})", null)
     }
 
     AndroidView(
@@ -111,7 +117,7 @@ fun RouteMap(
                         return true
                     }
 
-                    override fun onPageFinished(view: WebView, url: String) = view.renderLatest()
+                    override fun onPageFinished(view: WebView, url: String) { view.tag = null; view.renderLatest() }
                 }
                 loadUrl("https://appassets.androidplatform.net/assets/map.html")
             }

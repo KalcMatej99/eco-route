@@ -1,18 +1,22 @@
 # Eco Route for Android
 
-Eco Route is an early-beta Android trip planner for comparing routes, estimated fuel consumption, fuel cost and travel-time budgets. Fuel and speed optimization run on your phone.
+Eco Route is an early-beta Android trip planner for comparing routes, estimated fuel consumption, fuel cost and travel-time trade-offs. Fuel and speed optimization run on your phone.
 
 ## Download
 
-[Download the signed Android 0.9.0 beta](https://matejkalc.com/downloads/eco-route/latest.apk) · [Project and screenshots](https://matejkalc.com/projects/eco-route)
+[Download the signed Android 0.14.0 beta](https://matejkalc.com/downloads/eco-route/latest.apk) · [Project and screenshots](https://matejkalc.com/projects/eco-route)
 
-Android 8.0 or newer. Package `org.kalc.ecoroute`, version code 12. Updates preserve saved cars and trip load. Install the signed release APK; build outputs are unsigned intermediates.
+Android 8.0 or newer. Package `org.kalc.ecoroute`, version code 19. Updates preserve saved cars, trip load, recent places, and preferences. Install the signed release APK; build outputs are unsigned intermediates.
 
 ## Features
 
 - Destination-first map, worldwide address search, optional current-location start.
 - Multiple saved cars; offline public EEA/EPA car catalogue and editable physical assumptions.
-- Compare route alternatives with Fastest, +5%, +10%, +15% or a custom time allowance.
+- Select a whole-journey graph point: extra travel minutes versus estimated litres or euros saved.
+- Fastest / Most fuel saved shortcuts and a Suggested balance when a useful interior choice exists.
+- Foreground driving guidance from the selected speed profile; stale or uncertain GPS clears the advisory.
+- Device-local recent places with individual removal or clearing.
+- Optional theoretical calculations ignore mapped speed limits; driving guidance is disabled in that mode.
 - Up to eight intermediate stops, return to start, section-specific speed plans and CSV export.
 - Estimated litres, L/100 km and fuel cost using a dated current GOV.SI reference quote.
 
@@ -38,3 +42,7 @@ The minified APK is unsigned. Distribution uses the permanent app signing identi
 ## License
 
 Original code: [MIT](LICENSE). Third-party licenses and public dataset attribution: [NOTICES.txt](NOTICES.txt) and `THIRD_PARTY_LICENSES/`.
+
+## Behavior details
+
+See [time–fuel graph](docs/TIME_FUEL_GRAPH.md), [driving mode](docs/DRIVING_MODE.md), [recent places](docs/RECENT_PLACES.md), [theoretical mode](docs/THEORETICAL_MODE.md), and [fuel-model limits](docs/FUEL_MODEL.md). Production Android sources and build inputs match the signed release; two recent-place test fixtures use non-personal public example labels.

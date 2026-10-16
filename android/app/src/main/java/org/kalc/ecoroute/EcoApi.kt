@@ -20,6 +20,8 @@ import kotlin.coroutines.resumeWithException
 
 interface EcoService {
     suspend fun searchPlaces(query: String): List<Place>
+    /** Restore a confirmed place locally without repeating its online search. */
+    fun registerSelectedPlace(place: Place) {}
     suspend fun registerCurrentPlace(latitude: Double, longitude: Double): Place =
         throw EcoApiException("This service does not support current location yet.")
     suspend fun searchVehicles(query: String, fuelType: String? = null, limit: Int = 30, offset: Int = 0) =
@@ -37,6 +39,12 @@ interface EcoService {
         return startPlan(originId, destinationId, vehicle, roundTrip, timeAllowance)
     }
     suspend fun job(jobId: String): JobState
+    suspend fun calculateJourney(originId: String, destinationId: String, vehicle: JSONObject,
+        roundTrip: Boolean, timeAllowance: TimeAllowanceRequest, stops: List<String>,
+        ignoreSpeedLimits: Boolean, progress: (String) -> Unit): String {
+        if (ignoreSpeedLimits) throw EcoApiException("This planning service does not support theoretical calculations.")
+        return calculateJourney(originId, destinationId, vehicle, roundTrip, timeAllowance, stops, progress)
+    }
     suspend fun fuelPrice(): FuelPrice
     suspend fun calculateJourney(originId: String, destinationId: String, vehicle: JSONObject,
         roundTrip: Boolean, timeAllowance: TimeAllowanceRequest, stops: List<String>, progress: (String) -> Unit): String {
@@ -66,6 +74,10 @@ class EcoApi(context: android.content.Context) : EcoService {
     private val planner = HybridPlanner(online)
     private val catalogue = LocalVehicleCatalogue(context.applicationContext)
     private val places = java.util.concurrent.ConcurrentHashMap<String, Place>()
+    override fun registerSelectedPlace(place: Place) {
+        require(RecentPlaces.usable(place))
+        places[place.id] = place
+    }
     override suspend fun searchPlaces(query: String): List<Place> {
         require(query.trim().length in 3..180)
         val url = PublicDataClient.PHOTON + "?q=" + java.net.URLEncoder.encode(query.trim(), "UTF-8") + "&limit=6&lang=en"
@@ -99,10 +111,13 @@ class EcoApi(context: android.content.Context) : EcoService {
         catalogue.search(query, fuelType, limit, offset)
     }
     override suspend fun calculateJourney(originId: String, destinationId: String, vehicle: JSONObject, roundTrip: Boolean,
-        timeAllowance: TimeAllowanceRequest, stops: List<String>, progress: (String) -> Unit): String {
+        timeAllowance: TimeAllowanceRequest, stops: List<String>, progress: (String) -> Unit): String =
+        calculateJourney(originId, destinationId, vehicle, roundTrip, timeAllowance, stops, false, progress)
+    override suspend fun calculateJourney(originId: String, destinationId: String, vehicle: JSONObject, roundTrip: Boolean,
+        timeAllowance: TimeAllowanceRequest, stops: List<String>, ignoreSpeedLimits: Boolean, progress: (String) -> Unit): String {
         require(stops.size <= 8)
         val selected = (listOf(originId) + stops + destinationId).map { places[it] ?: throw EcoApiException("Search and confirm each address again.") }
-        return planner.calculate(selected, vehicle, roundTrip, timeAllowance, progress)
+        return planner.calculate(selected, vehicle, roundTrip, timeAllowance, ignoreSpeedLimits, progress)
     }
     override suspend fun fuelPrice() = OfficialFuelPrice.parse(online.request(PublicDataClient.FUEL_PRICE, null, 60L * 60 * 1000))
     override suspend fun startPlan(originId: String, destinationId: String, vehicle: JSONObject, roundTrip: Boolean, timeAllowance: TimeAllowanceRequest): String =

@@ -10,8 +10,8 @@ android {
         applicationId = "org.kalc.ecoroute"
         minSdk = 26
         targetSdk = 36
-        versionCode = 12
-        versionName = "0.9.0"
+        versionCode = 19
+        versionName = "0.14.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true }
